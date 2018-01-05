@@ -1,0 +1,1491 @@
+AP user guide
+GL,General Ledger 总账
+AP,Accounts payable 应付账款
+AR,Accounts Receivable 应收账款
+\\prcsgibackup
+oracle ebs
+Brajesh_Kumar12
+POLY_MERRIN
+http://prcsgidb1.ad.infosys.com:8020/OA_HTML/OA.jsp?OAFunc=OAHOMEPAGE&akRegionApplicationId=0&navRespId=20420&navRespAppId=1&navSecGrpId=0&transactionid=1965195946&oapc=4 
+
+
+http://prcsgidb1.ad.infosys.com:8020/
+IE访问Oracle EBS打不开form的问题
+http://www.cnblogs.com/jieqing/archive/2013/09/30/3347439.html
+
+java SE:
+http://www.oracle.com/technetwork/java/javase/downloads/java-archive-downloads-javase6-419409.html
+
+C:\Program Files\Java\jre1.8.0_25
+C:\Program Files (x86)\Java\jre6
+Oracle官方文档库
+http://tahiti.oracle.com/
+http://www.oracle.com/technetwork/documentation/index.html#apps
+其中EBS较新的为12.1.3和12.2.2版本，主要包含各模块的User Guide、Implementation Guide等。
+Oracle E-Business Suite Online Documentation Library Release 12.1.3+
+http://docs.oracle.com/cd/E18727_01/index.htm
+Oracle E-Business Suite Online Documentation Library Release 12.2.2
+http://docs.oracle.com/cd/V39571_01/current/html/homeset.html
+metalink/my oracle support：Oracle官方技术支持网站MOS（需CSI）
+https://support.oracle.com
+OTN：Oracle官方技术网中文版
+http://www.oracle.com/technetwork/cn/index.html
+OTN官方社区/论坛
+https://forums.oracle.com
+Oracle Blogs
+https://blogs.oracle.com
+Oracle 中文产品技术白皮书
+http://www.oracle.com/technetwork/cn/indexes/documentation/documentation-354135-zhs.html
+Oracle eBusiness Suite Electronic Technical Reference Manual – eTRM：介绍EBS数据结构，模块逻辑结构的Oracle官文网站（需CSI），看不懂后台表时可以去这里翻下。
+http://etrm.oracle.com/
+Oracle Downloads&Oracle Software Delivery Cloud：Oracle官方下载站（加上前面的MOS，官方下载基本就这几个了）
+http://www.oracle.com/us/downloads/index.html
+https://edelivery.oracle.com/
+https://edelivery.oracle.com/linux
+itpub论坛oracle erp板块：
+http://www.itpub.net/forum-46-1.html
+erp100论坛oracle erp板块：
+http://bbs.erp100.com/forum-205-1.html
+
+1、Oracle 电子商务套件（E-Business Suit），是在原来Application（ERP）基础上的扩展，包括ERP（企业资源计划管理）、HR（人力资源管理）、CRM（客户关系管理）等等多种管理软件的集合，是无缝集成的一个管理套件。
+2、OAF是Oracle Application Framework的简写。OAF的开发Oracle Jdeveloper。jdevdoc中存放Javadoc手册和OAF培训文档，jdevhome存放oaf用户文件和虚拟的oaf环境。
+3、ADF是Oracle应用程序开发框架(Application Development Framework)，Oracle公司为简化J2EE程序开发的复杂性专门开发的一种解决方案，ADF通过减少实现设计模式和应用程序框架的代码量，简化了J2EE的研发难度。
+
+:new --为一个引用最新的列值;
+:old --为一个引用以前的列值; 这两个变量只有在使用了关键字 "FOR EACH ROW"时才存在.且update语句两个都有,而insert只有:new ,delect 只有:old;
+
+againg： '5-1-11+12' 
+       Aging Snapshot Report - Aging Snapshot region
+	   
+	   
+soa = ar：SUM(DECODE(ATT.COMPUTE_CD, :PARAMETER.DEBITCD , 1, :PARAMETER.CREDITCD , -1, 0) *
+           (NVL(SL.CASH_AM, 0) + NVL(SL.DEPOSIT_AM, 0) +
+            NVL(SL.PRODUCT_AM, 0)
+			
+	CASHIER REPORTS - CUSTOMER SOA BY REGION - SAL_REC_DET_REG
+			
+			
+  --  CASHIER REPORTS - CUSTOMER SOA - CUSTOMER SOA
+
+查找某个值在在某一列中是否存在
+=COUNTIF(A2:A99,C2)	
+去重并求和
+=SUMIF(A$3:A$11099,E3,B$3:B$11099)
+选中过滤的数据
+select-- go to special
+
+1.payment and...不该加location
+2用settle_id是否可以查找sl_fl_tr PAYMENT_id更全
+3.比较sl_FL_TR 和payment_invoice
+1.5150temp： yellow:in INV_HDR_TEMP,but not in my caculate
+2.ar一个是<= againg是所有
+relation is confusion
+
+upload_package.get_due_dt
+	
+https://10.156.71.51/sva 
+https://10.156.138.89/sva
+
+Win7下安装和使用Windows XP Mode
+
+
+desc PRC_ZONE
+
+http://prcsgi10831d:433/svn/MEASD/
+
+http://prcsgi12020d.ad.infosys.com:8889/forms/frmservlet?form=main.fmx
+
+sqlplus psd/ksaprd572@sa02prd
+conn psd/ksapsd2015@sa02prd_t
+@PACKAGE_NAME
+DESC
+
+HHT：hand held terminal
+HH: hand held ：手持设备
+
+not exists:是查询所有，一个都不存在
+exists:是存在一个就行
+
+select * from   TABLE_FIELDS 
+
+----查询procedure
+SELECT * FROM DBA_PROCEDURES WHERE PROCEDURE_NAME='FILL_INV_HDR_TEMP';
+
+select * from all_jobs;
+
+SELECT * FROM CODES
+WHERE CODE_TAB_NAME = 'INSOURCE';
+
+SET_ITEM_PROPERTY('PB_PROCEED', ENABLED, PROPERTY_TRUE);
+SET_ITEM_PROPERTY('PB_PROCEED', ENABLED, PROPERTY_FALSE);
+
+SELECT * FROM ALL_DEPENDENCIES WHERE OWNER='PSD' AND REFERENCED_NAME='TABLE_FIELDS';
+select * from all_sequences where sequence_owner='PSD';
+
+
+insert into Object_Text (OBJECT_TYPE, OBJECT_NAME, OBJECT_ITEM_NAME, OBJECT_DESC, OBJECT_LANG, OBJECT_HELP, SEQ)
+values ('B', 'CUST_REP', 'USER', 'User', 1, null, OBJECT_TEXT_SEQ.Nextval);
+
+---upper
+--查询字段在哪些package中用
+select * from  dba_source where upper(text) like '%PAYMENT_INVOICE_A%'
+
+---INDEX 及效率 及表的来源
+select * from dba_objects where object_name in('SL_FL_TR_BK','PAYM_HDR_A');
+
+select * from all_objects where object_name = 'INV_HDR_A';
+select * from all_SYNONYMs where SYNONYM_name = 'INV_HDR_A';
+SELECT * FROM DBA_SYNONYMS where SYNONYM_NAME IN('SL_FL_TR_BK','PAYM_HDR_A');
+
+SELECT * FROM PAYM_HDR_A@SA02_PRD_ARC_LINK;
+
+SELECT * FROM DBA_DB_LINKS;
+
+
+create index SL_FL_TR_BK_K7 on SL_FL_TR_BK(CUSTOMER_ID, TRANS_DT, TRANS_TYPE,LOCATION_ID) tablespace PSD_INDX;
+to_char(RPD.VISIT_START_DT, 'dd/MM/yyyy hh:mi am') VISIT_START_DT
+
+----create table
+CREATE TABLE TEMP_AR_AGING_VARIANCE (
+region VARCHAR2(100),
+channel_name VARCHAR2(100),
+customer_id VARCHAR2(100),
+customer_name VARCHAR2(100),
+sap_customer_no VARCHAR2(100),
+aging_amt number(10,2),
+ar_amt number(10,2),
+ar_aging_variance  number(10,2),
+approver  VARCHAR2(50),
+created_dt  date default sysdate,
+created_by  VARCHAR2(50) default 'PSD',
+remarks VARCHAR2(200)
+);
+
+frmcmp userid=PSD/pceprd753@EG01prd module=survey_download_6920.fmb
+
+frmcmp userid=PSD/EG03P2017P@EG03PLT module=survey_download_6920.fmb
+#set NLS_LANG=AMERICAN_AMERICA.WE8ISO8859P1
+frmcmp userid=PSD/EG01PSD2015@EG01PLT module=INVLIB.pll module_type=library
+frmcmp userid=PSD/EG01PSD2015@EG01PLT module=Assets.fmb
+frmcmp userid=PSD/EG01PSD2015@EG01PLT module=Asset_Tracking.fmb
+frmcmp userid=PSD/KSAPSD2015@SA02PLT module=INVOICE.fmb
+frmcmp userid=PSD/KSAPSD2015@SA02PLT module=order.fmb
+
+frmcmp userid=PSD/UAEPSD2014@AE02PLT module=INVOICE.fmb
+frmcmp userid=PSD/UAEPSD2014@AE02PLT module=order.fmb
+ROWID 是一个类似于rownum的伪列,用于定位数据库中一条记录的一个相对唯一地址值。通常情况下,该值在该行数据插入到数据库表时即被确定且唯一
+
+--查询所有的
+SELECT * FROM ALL_TABLES WHERE UPPER(TABLE_NAME) LIKE '%ADJUSTMENT%';
+
+ SELECT * FROM DBA_TABLES WHERE UPPER(TABLE_NAME) LIKE '%ADJUSTMENT%';
+ --查询某一列在哪个表
+ SELECT TABLE_NAME,COLUMN_NAME FROM USER_TAB_COLUMNS WHERE COLUMN_NAME='ADJUSTMENT_STAT_CD';
+ 
+
+
+--用户
+select count(1) from psd_users;
+--连接数
+select MAX_UTILIZATION from v$resource_limit WHERE RESOURCE_NAME='sessions';
+
+---更新
+ UPDATE CUSTOMER_AUDIT
+   SET NEW_CUST_SHRT_NM = 'SMAN WAHEED AWAN SABIR HUSSAIN'
+ WHERE customer_id = '67139';
+ --长度
+SELECT LENGTH( CUST_SHRT_NM) FROM CUSTOMER WHERE customer_id = '67139';
+
+--修改表结构
+ALTER TABLE CUSTOMER MODIFY CUST_SHRT_NM VARCHAR2(30);
+
+---处理空值
+SELECT NVL(sum(SYS_NET_AM),0)
+FROM   INV_HDR
+WHERE LOCATION_ID = '15010000'
+AND INVOICE_ID = '94300002'
+AND INV_TYP_CD = '2';
+--all_triggers
+select * from all_triggers where table_name='INV_HDR'
+--all_source
+select * from all_source
+
+--状态
+select * from status
+
+--报错提示
+select * from astro_messages where id = '701'
+select * from astro_messages where message like '%code%'
+
+--查询menu
+select * from menus where menu_name = 'GEN_INV_ORDER'
+select * from menus where menu_name like '%HHT%';
+
+--SEL_PARAM('INVPRE')
+select value from system_parameters where code = 'INVPRE';
+
+--war_param('REPSERV')
+select value from warehouse_parameters where code = 'REPSERV';
+
+--更新表字段
+ select * FROM TEMP_UPLOAD_PWL;
+ alter table TEMP_UPLOAD_PWL add CUSTOMER_ID varchar2(8);
+ 
+ --find report
+ select * from object_text where object_desc like 'Final Settlement%'
+ 
+--只能为当前用户、查询当前用户
+select * from psd_users  where ora_user = user
+select * from user_users;
+select * from person where person_type = '23'
+select * from person where person_id = '11111'
+ 
+ --dual 操作
+ (
+select user from dual;
+select * from dual;
+select sysdate from dual;
+select 5-3 from dual;
+select v$session from dual;
+)
+
+--union连接
+select * from test_li
+
+-----sql---更新字段后更新无效的相关字段
+(
+alter table PRC_ZONE add  consumer_price NUMBER(13,4);
+alter table PRC_ZONE add    customer_price NUMBER(13,4);
+alter table item add ITEM_TYPE_ID     VARCHAR2(8);
+
+
+select OBJECT_TYPE,'ALTER '||OBJECT_TYPE||' '||OBJECT_NAME||' COMPILE;'
+
+from dba_objects where status<>'VALID' AND OWNER='PSD';
+
+ALTER PROCEDURE MOVE_IDOC COMPILE;
+ALTER TRIGGER AFT_IUD_PROMOTION_INV COMPILE;
+ALTER TRIGGER AFT_IUD_PROMOTION_ORD COMPILE;
+ALTER VIEW DISC_VW1 COMPILE;
+ALTER FUNCTION GET_SALES_TAX COMPILE;
+ALTER FUNCTION GET_COMM_TAX COMPILE;
+ALTER FUNCTION CHECK_TRUCK_DETAILS COMPILE;
+ALTER FUNCTION ITEM_PRICE COMPILE;
+ALTER FUNCTION CUST_ITEM_PRICE COMPILE;
+ALTER FUNCTION GET_CASE_PRICE COMPILE;
+ALTER FUNCTION GET_CASE_QTY COMPILE;
+ALTER PACKAGE  VOUCHER_PACKAGE COMPILE BODY;
+ALTER PACKAGE  ROADNET_PACKAGE COMPILE BODY;
+ALTER PACKAGE  ASTRO_PACKAGE COMPILE BODY;
+ALTER PACKAGE  ORDER_VOUCHER_PACKAGE COMPILE BODY;
+ALTER PACKAGE  PANDA_PACKAGE COMPILE BODY;
+ALTER PACKAGE  SAP_BI_PACKAGE COMPILE BODY;
+ALTER PACKAGE  INV_ITEM_PACKAGE COMPILE BODY;
+ALTER PACKAGE  DTS_ALLOCATION COMPILE BODY;
+
+)
+
+---数据库操作
+alter package pkname compile;
+alter package pkname compile body;
+
+where test_id = '1'
+and 1=1
+union 
+select * from test_li
+where test_id = '2'
+and 1=1
+
+ --直接修改
+SELECT * FROM PSD_USERS P_USERS  WHERE P_USERS.ORA_USER = 'PSD'  FOR UPDATE
+SELECT * FROM PERSON WHERE PERSON_ID = '101829'  FOR UPDATE
+
+ ----insert time
+ insert into K_D_TRUCK_INVENTORY
+  (location_id,
+   txn_dt,
+   item_id,
+   qty,
+   load_subtype_id,
+   upper_unit_qty,
+   lower_unit_qty,
+   updated_dt,
+   updated_user,
+   created_dt,
+   created_user)
+values
+  ('100037',
+   to_date('31/12/2015 12:59:00', 'dd/mm/yyyy HH24:MI SS'),
+   '86640319',
+   -25,
+   1,
+   -1,
+   0,
+   NULL,
+   NULL,
+   SYSDATE,
+   'PSD'  
+   )
+
+ 
+ ---用户A新建一个dblink_b
+DROP  PUBLIC  DATABASE  LINK dblink_b
+ create database link dblink_c
+  connect to c identified by c的密码
+  using '(DESCRIPTION =
+    (ADDRESS_LIST =
+      (ADDRESS = (PROTOCOL = TCP)(HOST = 主机ip)(PORT = 1521))
+    )
+    (CONNECT_DATA =
+      (SERVICE_NAME = 实例名)
+    )
+  )';
+ 
+ 
+ --时间
+SELECT COUNT(*)
+  FROM HH_USER_ACTIVITY
+ WHERE TRANSACTION_DATE BETWEEN TO_DATE('21012017', 'DDMMYYYY') AND
+       TO_DATE('21012017', 'DDMMYYYY') +
+       (((24 * 60 * 60) - 1) / (24 * 60 * 60));
+SELECT COUNT(*) FROM HH_USER_ACTIVITY
+WHERE TRUNC(TRANSACTION_DATE) BETWEEN TO_DATE('21012017', 'DDMMYYYY') AND
+       TO_DATE('21012017', 'DDMMYYYY');
+	   
+
+----with partition
+(
+ --payment_invoice existing  
+ --0 
+   with pi as
+  (select location_id,
+          INVOICE_ID,
+          payment_id,
+          SUM(PAYMENT_AM) PAYMENT_AM,
+          count(1) over(partition by location_id, INVOICE_ID ) pay_inv_cnt
+     from (select * from paymENT_INVOICE
+          union all
+          select * from paymENT_INVOICE_a
+          ) ph
+    --where invoice_id in('100373','100273')
+    GROUP BY location_id, INVOICE_ID, payment_id)
+ select * from (
+ select pi.location_id,pi.INVOICE_ID, pi.payment_id, count(1) over(partition by pi.location_id, pi.INVOICE_ID ) pay_cnt, pay_inv_cnt
+   FROM (select location_id,INVOICE_ID,payment_id from sl_fl_tr_bk
+          union all
+          select location_id,INVOICE_ID,payment_id from sl_fl_tr
+          ) sl, pi
+  WHERE sl.location_id = pi.location_id
+    and pi.payment_id = sl.payment_id
+  group by pi.location_id,pi.INVOICE_ID, pi.payment_id, pi.pay_inv_cnt) pp
+  where pp.pay_cnt<>pp.pay_inv_cnt
+      ---pp.pay_cnt=0
+	  --pp.pay_cnt=pp.pay_inv_cnt
+  and pp.pay_inv_cnt>0;
+)	   
+
+
+----------aging caculate
+(
+--To compare remaining_amount original and calculated
+--Fomula: remaining_amount = invoice amount - payment amount - adjustment amount(plus/negative)
+select EE.INVOICE_ID,EE.REMAINING_AMOUNT,inv_amt,pay_inv_amt,adj_inv_amt,remaining_amt_calc
+from (
+    SELECT INVOICE_ID,
+          sum(REMAINING_AMOUNT) REMAINING_AMOUNT,sum(inv_amt) inv_amt,
+          sum(pay_inv_amt) pay_inv_amt,sum(adj_inv_amt) adj_inv_amt,
+          sum(inv_amt)-sum(pay_inv_amt)-sum(adj_inv_amt) remaining_amt_calc
+    FROM (
+    --1.invoice amount
+    select 'INV' typem,location_id,INVOICE_ID, customer_id,REMAINING_AMOUNT, SYS_NET_AM inv_amt,0 pay_inv_amt, 0 adj_inv_amt 
+    from (
+        select location_id,INVOICE_ID, customer_id,SYS_NET_AM, REMAINING_AMOUNT from inv_hdr
+        union
+        select location_id,INVOICE_ID, customer_id,SYS_NET_AM, REMAINING_AMOUNT from inv_hdr_a
+    ) ih
+    union
+    --2. payment_invoice amount
+    select 'PAY' typem, location_id,INVOICE_ID, 'X' customer_id,0 REMAINING_AMOUNT, 0 inv_amt,SUM(PAYMENT_AM) pay_inv_amt, 0 adj_inv_amt 
+    from (
+        select location_id,INVOICE_ID,PAYMENT_AM from payment_invoice
+        union
+        select location_id,INVOICE_ID,PAYMENT_AM from payment_invoice_a    
+    ) ph
+    group by location_id,INVOICE_ID
+
+    union
+    --3. adjustment_invoice amount
+    select 'ADJ' typem, location_id,INVOICE_ID, 'X' customer_id,0 REMAINING_AMOUNT, 0 inv_amt,0 pay_inv_amt, 
+           SUM( DECODE(adt.COMPUTE_CD, 1, ai.PAYMENT_AM,2, -ai.PAYMENT_AM, 0)) adj_inv_amt 
+    from (
+        select location_id,INVOICE_ID,PAYMENT_AM,adjustment_type_id from adjustment_invoice
+        union
+        select location_id,INVOICE_ID,PAYMENT_AM,adjustment_type_id from adjustment_invoice_a    
+    ) ai, adjustment_type adt
+    where ai.adjustment_type_id = adt.adjustment_type_id
+    group by location_id,INVOICE_ID) SS
+    group by INVOICE_ID)ee,INV_HDR I
+where ee.remaining_amount<>remaining_amt_calc
+AND I.INVOICE_ID = EE.INVOICE_ID
+AND I.CUSTOMER_ID IN (
+'118',
+'124',
+'148',
+'244',
+'250',
+'253',
+'262',
+'263',
+'275',
+'460'
+);
+
+
+)
+      
+   --自连接
+	   SELECT L_LOCATION.LOCATION_ID  LOCATION_ID  /* CG$FK */
+      ,DECODE(:PARAMETER.LANG_ID, 1, L_LOCATION.LOCATION_NM, L_LOCATION.LOCATION_NM_LL)  L_LOCATION_NM
+FROM   LOCATION L_LOCATION
+WHERE  ((
+(:SYSTEM.MODE = 'ENTER-QUERY')
+)
+OR ((:SYSTEM.MODE = 'NORMAL')
+AND L_LOCATION.LOC_TYPE_ID = :PARAMETER.SUBWHSE
+))                                                                                                                                          
+and  ((:PARAMETER.VALSBLDS='0' ) or                                  
+(:PARAMETER.VALSBLDS='1' and   L_LOCATION.P_LOC_ID <> :LD_HDR.LOCATION_ID))
+ORDER BY 2
+--爷爷-父亲-孙子：
+
+P_LOCATION.location_id = L_LOCATION.P_LOC_ID AND P_LOCATION.P_LOC_ID <> :LD_HDR.LOCATION_ID 
+
+
+
+---修改report中的系统参数
+delete from object_text
+ where OBJECT_NAME ='HH_USER_ACTIVITY'
+and OBJECT_ITEM_NAME ='L_CUSTOMER_ID';
+
+INSERT INTO object_text
+(OBJECT_TYPE, OBJECT_NAME, OBJECT_ITEM_NAME, OBJECT_DESC, OBJECT_LANG)
+VALUES
+  ('R', 'HH_USER_ACTIVITY', 'L_CUSTOMER_ID', 'Customer', 1);  
+  
+  INSERT INTO object_text
+(OBJECT_TYPE, OBJECT_NAME, OBJECT_ITEM_NAME, OBJECT_DESC, OBJECT_LANG)
+VALUES
+  ('R', 'HH_USER_ACTIVITY', 'L_CUSTOMER_ID', 'Customer', 2);  
+  
+ ---TRIGGER
+ (
+ 
+CREATE OR REPLACE TRIGGER TRIG_ORDER_HDR_TOT_NM_LINES
+  AFTER INSERT OR DELETE ON ORDER_DTL 
+  FOR EACH ROW
+DECLARE
+  V_TOT_NM_LINES NUMBER;
+BEGIN	
+
+	IF INSERTING THEN
+     
+    RAISE_APPLICATION_ERROR(-20001, 'NEW.ORDER_ID'||:NEW.ORDER_ID||  'old:'||:OLD.ORDER_ID);
+    
+		SELECT NVL(COUNT(*),0)  
+		INTO V_TOT_NM_LINES
+		FROM ORDER_DTL
+		WHERE LOCATION_ID = :NEW.LOCATION_ID
+		AND ORDER_ID = :NEW.ORDER_ID;
+		
+		UPDATE ORDER_HDR 
+		SET TOT_NM_LINES = V_TOT_NM_LINES
+		WHERE LOCATION_ID = :NEW.LOCATION_ID
+		AND ORDER_ID = :NEW.ORDER_ID;
+  ELSIF DELETING THEN
+   
+    RAISE_APPLICATION_ERROR(-20001, 'NEW.ORDER_ID'||:NEW.ORDER_ID||  'old:'||:OLD.ORDER_ID);
+    
+		SELECT NVL(COUNT(*),0)  
+		INTO V_TOT_NM_LINES
+		FROM ORDER_DTL
+		WHERE LOCATION_ID = :OLD.LOCATION_ID
+		AND ORDER_ID = :OLD.ORDER_ID;
+		
+		UPDATE ORDER_HDR 
+		SET TOT_NM_LINES = V_TOT_NM_LINES
+		WHERE LOCATION_ID = :OLD.LOCATION_ID
+		AND ORDER_ID = :OLD.ORDER_ID;
+  END IF;  
+END;
+/
+ )
+  
+----创建menus
+select * from menus where menu_name like '%AGAING%' FOR UPDATE;
+SELECT MAX(MENU_CODE) FROM MENUS 
+create_menus_script
+---find menu
+SELECT * FROM MENUS WHERE MENU_MENU_CODE = '30'
+  
+  
+delete from object_text
+ where OBJECT_NAME ='HH_USER_ACTIVITY'
+and OBJECT_ITEM_NAME ='CUSTOMER_ID';
+
+
+INSERT INTO object_text
+(OBJECT_TYPE, OBJECT_NAME, OBJECT_ITEM_NAME, OBJECT_DESC, OBJECT_LANG)
+VALUES
+  ('B', 'HH_USER_ACTIVITY', 'CUSTOMER_ID', 'Customer', 1);  
+  
+  INSERT INTO object_text
+(OBJECT_TYPE, OBJECT_NAME, OBJECT_ITEM_NAME, OBJECT_DESC, OBJECT_LANG)
+VALUES
+  ('B', 'HH_USER_ACTIVITY', 'CUSTOMER_ID', 'Customer', 2);  
+
+
+  
+
+  procedure:
+  (
+  --------Q2474521 
+PROCEDURE FILL_HEADER_LABELS  IS
+    
+  CURSOR LABEL_CUR IS
+  	SELECT OBJECT_ITEM_NAME,OBJECT_DESC
+  	FROM   OBJECT_TEXT
+  	WHERE  OBJECT_NAME = 'CASH_CUSTOMER_BALANCE'
+  	AND    OBJECT_LANG = :PARAMETER.LANG_ID
+  	AND    OBJECT_TYPE = 'B';
+  	
+	
+BEGIN
+	 
+    FOR I IN LABEL_CUR
+    LOOP
+		IF I.OBJECT_ITEM_NAME = 'LOCATION_ID' THEN
+				:PARAMETER.L_LOCATION_ID := I.OBJECT_DESC;
+		ELSIF I.OBJECT_ITEM_NAME = 'LOCATION_NM'   THEN
+				:PARAMETER.L_LOCATION_NM := I.OBJECT_DESC;
+		ELSIF I.OBJECT_ITEM_NAME = 'TRANS_DT'  THEN
+				:PARAMETER.L_TRANS_DT := I.OBJECT_DESC;
+		ELSIF I.OBJECT_ITEM_NAME = 'CUSTOMER_ID1' THEN
+				:PARAMETER.L_CUSTOMER_ID1 := I.OBJECT_DESC;
+		ELSIF I.OBJECT_ITEM_NAME = 'CUSTOMER_NM1' THEN
+				:PARAMETER.L_CUSTOMER_NM1 := I.OBJECT_DESC;		 
+		ELSIF I.OBJECT_ITEM_NAME = 'TRANS_TYPE'  THEN
+			:PARAMETER.L_TRANS_TYPE := I.OBJECT_DESC;
+		ELSIF I.OBJECT_ITEM_NAME = 'TRANS_TYPE_NM'  THEN
+				:PARAMETER.L_TRANS_TYPE_NM := I.OBJECT_DESC;
+		ELSIF I.OBJECT_ITEM_NAME = 'AMOUNT'  THEN
+				:PARAMETER.L_AMOUNT := I.OBJECT_DESC;
+		ELSIF I.OBJECT_ITEM_NAME = 'SETTLE_ID'  THEN
+				:PARAMETER.L_SETTLE_ID := I.OBJECT_DESC;
+		ELSIF I.OBJECT_ITEM_NAME = 'TRANS_ID'  THEN
+				:PARAMETER.L_TRANS_ID := I.OBJECT_DESC;
+		ELSIF I.OBJECT_ITEM_NAME = 'VISIT_SEQ'  THEN
+				:PARAMETER.L_VISIT_SEQ := I.OBJECT_DESC;
+		ELSIF I.OBJECT_ITEM_NAME = 'TRAN_SEQ_NR'  THEN
+				:PARAMETER.L_TRAN_SEQ_NR := I.OBJECT_DESC;
+		ELSIF I.OBJECT_ITEM_NAME = 'CUSTOMER_ID'  THEN
+				:PARAMETER.L_CUSTOMER_ID := I.OBJECT_DESC;
+		ELSIF I.OBJECT_ITEM_NAME = 'CUST_DESC' THEN
+				:PARAMETER.L_CUST_DESC := I.OBJECT_DESC;
+		END IF;
+    END LOOP;
+END;
+
+	 	
+
+  
+  
+  
+  
+  
+  -----Q2474521 
+PROCEDURE EXPORT_FILE IS
+
+FILE_NAME		VARCHAR2(500);
+OUT_FILE 		TEXT_IO.FILE_TYPE;
+V_LIST 			VARCHAR2(10000);
+DUMMY NUMBER;
+
+---CASH_CUSTOMER_BALANCE
+CURSOR C_EXTRACT_CCB IS
+	SELECT CCB.LOCATION_ID,
+	     DECODE(:PARAMETER.LANG_ID, 1, L.LOCATION_NM, L.LOCATION_NM_LL) LOCATION_NM,
+       CCB.COLLECTION_DATE,
+       CCB.PERSON_CUSTOMER_ID,
+	     DECODE(:PARAMETER.LANG_ID,1,C1.CUST_SHRT_NM,C1.CUST_SHRT_NM_LL) CUST_SHRT_NM,
+       CCB.DOCUMENT_TYPE,
+	     DECODE(:PARAMETER.LANG_ID,1, AC.TRN_TYP_NM, AC.TRN_TYP_NM_LL)  TRN_TYP_NM ,
+       CCB.AMOUNT,
+       CCB.SETTLEMENT_ID,
+       CCB.TRANS_ID,
+       CCB.VISIT_SEQ,
+       CCB.TRAN_SEQ_NR,
+       CCB.CUSTOMER_ID,
+       DECODE(:PARAMETER.LANG_ID , 1 ,C.CUST_SHRT_NM,C.CUST_SHRT_NM_LL) CUST_DESC
+  FROM CASH_CUSTOMER_BALANCE CCB,
+       LOCATION              L,
+       CUSTOMER              C1,
+       ACCT_TRANS_TYPE       AC,
+       CUSTOMER              C
+ WHERE CCB.person_CUSTOMER_ID =:INQUIRY_BLK.CR_ID
+		AND (CCB.CUSTOMER_ID = :INQUIRY_BLK.CUSTOMER_ID OR :INQUIRY_BLK.CUSTOMER_ID IS NULL)
+		and CCB.collection_date between :INQUIRY_BLK.SETTLE_DT and :INQUIRY_BLK.TO_DATE
+	   AND CCB.LOCATION_ID = L.LOCATION_ID
+	   AND CCB.PERSON_CUSTOMER_ID = C1.CUSTOMER_ID
+	   AND CCB.DOCUMENT_TYPE = AC.TRN_TYP_ID
+	   AND CCB.CUSTOMER_ID = C.CUSTOMER_ID;
+
+
+BEGIN
+	--	MESSAGE('1');
+	 	---MESSAGE(SQLERRM);
+	FILL_HEADER_LABELS;
+	
+	 DUMMY := ASTRO_ALERT(19,FALSE,1,'Code Error2');
+	--FILE_NAME := :PARAMETER.ORARRPPA||'\'||'CASH_CUST_BAL_INQ.csv';	
+	OUT_FILE := 	TEXT_IO.FOPEN(FILE_NAME, 'w');
+	V_LIST  	:= 				:PARAMETER.L_LOCATION_ID					||','||
+								:PARAMETER.L_LOCATION_NM							||','||
+								:PARAMETER.L_TRANS_DT					||','||
+								:PARAMETER.L_CUSTOMER_ID1								||','||
+								:PARAMETER.L_CUSTOMER_NM1						||','||
+								:PARAMETER.L_TRANS_TYPE						||','||
+								:PARAMETER.L_TRANS_TYPE_NM				||','||
+								:PARAMETER.L_AMOUNT				||','||
+								:PARAMETER.L_SETTLE_ID				||','||
+								:PARAMETER.L_TRANS_ID		||','||
+								:PARAMETER.L_VISIT_SEQ			||','||
+								:PARAMETER.L_TRAN_SEQ_NR			||','||
+								:PARAMETER.L_CUSTOMER_ID					||','||
+								:PARAMETER.L_CUST_DESC						||'..';
+
+	TEXT_IO.PUT_LINE(OUT_FILE, V_LIST);
+	FOR H IN C_EXTRACT_CCB LOOP	
+  					
+		V_LIST  := 					H.LOCATION_ID					||','||
+									H.LOCATION_NM					||','||
+									H.COLLECTION_DATE					||','||
+									H.PERSON_CUSTOMER_ID					||','||
+									H.CUST_SHRT_NM					||','||
+									H.DOCUMENT_TYPE							||','||
+									H.TRN_TYP_NM					||','||
+									H.AMOUNT								||','||
+									H.SETTLEMENT_ID						||','||
+									H.TRANS_ID						||','||
+									H.VISIT_SEQ						||','||
+									H.TRAN_SEQ_NR						||','||
+									H.CUSTOMER_ID					||','||
+									H.CUST_DESC		;	
+		TEXT_IO.PUT_LINE(OUT_FILE,V_LIST);
+	END LOOP;
+	TEXT_IO.FCLOSE(OUT_FILE);
+	WEB.SHOW_DOCUMENT(:PARAMETER.WEBPATH||'CASH_CUST_BAL_INQ.csv','_blank');  	
+	EXCEPTION
+		WHEN OTHERS THEN
+		
+		MESSAGE(SQLERRM);
+	BEGIN
+		IF (TEXT_IO.IS_OPEN(OUT_FILE)) THEN TEXT_IO.FCLOSE(OUT_FILE);
+		END IF;	
+	END;
+	
+END;
+  )
+  
+  
+  TEST:
+  (
+  declare
+  V_NBR                 NUMBER;
+  V_RouteKey            VARCHAR2(25);
+  V_TransactionType     VARCHAR2(25);
+  V_TransactionDateTime VARCHAR2(20);
+  V_DocumentPrefix      VARCHAR2(35);
+  V_DocumentNumber      VARCHAR2(25);
+  V_InventoryNumber     VARCHAR2(25);
+  V_OdemeterReading     VARCHAR2(25);
+  V_TransferLocation    VARCHAR2(25);
+  V_ReferenceNumber     VARCHAR2(35);
+  V_RequestDate         VARCHAR2(35);
+  V_SecurityCode        VARCHAR2(25);
+  V_LOADNUMBER          VARCHAR2(25);
+  V_LOADREQUESTNUMBER   VARCHAR2(25);
+  V_TransmitIndicator   VARCHAR2(25);
+  V_VoidIndicator       VARCHAR2(25);
+  V_InventoryKey        VARCHAR2(25);
+  V_DetailKey           VARCHAR2(25);
+  V_REQ_DATE            DATE;
+  /*to upload helper1/2/3/4  ,reference num  and reamrks in S and D  */
+  V_HelperNumber1          VARCHAR2(30);
+  V_HelperNumber2          VARCHAR2(30);
+  V_HelperNumber3          VARCHAR2(30);
+  V_HelperNumber4          VARCHAR2(30);
+  V_LoadOutReferenceNumber VARCHAR2(40);
+  V_LoadOutRemark          VARCHAR2(110);
+  V_Username               VARCHAR2(50);
+  V_PrinterNumber          VARCHAR2(10);
+  V_NoofPrints             VARCHAR2(10);
+  V_UNLOADTYPE             VARCHAR2(10);
+  V_SUBWAREHOUSECODE       VARCHAR2(10);
+  NO_FILE EXCEPTION;
+  -- Q655718 MOD BY INFOSYS
+  V_RequestApproved VARCHAR2(25);
+  -- Q655718 MOD BY INFOSYS
+  PATH_NAME varchar2(100);
+  V_DOWN_DATE VARCHAR2(1) := '0';
+  P_PROCEED VARCHAR2(10);
+  OUT_FILE  UTL_FILE.FILE_TYPE;
+  LINE_FILE VARCHAR2(32767);
+  a         number;
+BEGIN
+  SELECT VALUE
+    INTO PATH_NAME
+    FROM warehouse_parameters
+   WHERE CODE = 'ATEST';
+  --  PATH_NAME := UPPER(PATH_NAME);
+  P_PROCEED := 'Y';
+  EXECUTE IMMEDIATE 'CREATE OR REPLACE DIRECTORY DBITC_DIR AS ''' ||
+                    PATH_NAME || '''';
+  BEGIN
+    OUT_FILE := UTL_FILE.FOPEN(location     => 'DBITC_DIR',
+                               filename     => 'DBITC.ASC',
+                               open_mode    => 'r',
+                               max_linesize => 32767);
+  EXCEPTION
+    WHEN OTHERS THEN
+      dbms_output.put_line(sqlerrm);
+      UTL_FILE.FCLOSE(OUT_FILE);
+      RAISE NO_FILE;
+  END;
+  a := 0;
+  UTL_FILE.GET_LINE(OUT_FILE, LINE_FILE);
+  LOOP
+    BEGIN
+      UTL_FILE.GET_LINE(OUT_FILE, LINE_FILE);
+      V_NBR := 1;
+      IF LINE_FILE IS NOT NULL THEN
+        -- Q655718 MOD BY INFOSYS
+        -- WHILE V_NBR < 29 LOOP
+        WHILE V_NBR < 30 LOOP
+          -- Q655718 MOD BY INFOSYS  
+          IF V_NBR = 1 THEN
+            V_RouteKey := SUBSTR(LINE_FILE, 1, INSTR(LINE_FILE, ',', 1) - 1);
+            LINE_FILE  := SUBSTR(LINE_FILE, INSTR(LINE_FILE, ',', 1) + 1);
+            a          := 1;
+          ELSIF V_NBR = 2 THEN
+            V_TransactionType := SUBSTR(LINE_FILE,
+                                        1,
+                                        INSTR(LINE_FILE, ',', 1) - 1);
+            LINE_FILE         := SUBSTR(LINE_FILE,
+                                        INSTR(LINE_FILE, ',', 1) + 1);
+            a                 := 2;
+          ELSIF V_NBR = 3 THEN
+            V_TransactionDateTime := SUBSTR(LINE_FILE,
+                                            1,
+                                            INSTR(LINE_FILE, ',', 1) - 1);
+            LINE_FILE             := SUBSTR(LINE_FILE,
+                                            INSTR(LINE_FILE, ',', 1) + 1);
+          
+            a := 3;
+          ELSIF V_NBR = 4 THEN
+            V_DocumentPrefix := SUBSTR(LINE_FILE,
+                                       1,
+                                       INSTR(LINE_FILE, ',', 1) - 1);
+            LINE_FILE        := SUBSTR(LINE_FILE,
+                                       INSTR(LINE_FILE, ',', 1) + 1);
+            a                := 4;
+          ELSIF V_NBR = 5 THEN
+            V_DocumentNumber := SUBSTR(LINE_FILE,
+                                       1,
+                                       INSTR(LINE_FILE, ',', 1) - 1);
+            LINE_FILE        := SUBSTR(LINE_FILE,
+                                       INSTR(LINE_FILE, ',', 1) + 1);
+            a                := 5;
+          ELSIF V_NBR = 6 THEN
+            V_InventoryNumber := SUBSTR(LINE_FILE,
+                                        1,
+                                        INSTR(LINE_FILE, ',', 1) - 1);
+            LINE_FILE         := SUBSTR(LINE_FILE,
+                                        INSTR(LINE_FILE, ',', 1) + 1);
+            a                 := 6;
+          ELSIF V_NBR = 7 THEN
+            V_OdemeterReading := SUBSTR(LINE_FILE,
+                                        1,
+                                        INSTR(LINE_FILE, ',', 1) - 1);
+            LINE_FILE         := SUBSTR(LINE_FILE,
+                                        INSTR(LINE_FILE, ',', 1) + 1);
+            a                 := 7;
+          ELSIF V_NBR = 8 THEN
+            V_TransferLocation := SUBSTR(LINE_FILE,
+                                         1,
+                                         INSTR(LINE_FILE, ',', 1) - 1);
+            LINE_FILE          := SUBSTR(LINE_FILE,
+                                         INSTR(LINE_FILE, ',', 1) + 1);
+            a                  := 8;
+          ELSIF V_NBR = 9 THEN
+            V_ReferenceNumber := SUBSTR(LINE_FILE,
+                                        1,
+                                        INSTR(LINE_FILE, ',', 1) - 1);
+            LINE_FILE         := SUBSTR(LINE_FILE,
+                                        INSTR(LINE_FILE, ',', 1) + 1);
+            --Helper1/2/3/4 , reference num. , remark
+            a := 9;
+          ELSIF V_NBR = 10 THEN
+            V_HelperNumber1 := SUBSTR(LINE_FILE,
+                                      1,
+                                      INSTR(LINE_FILE, ',', 1) - 1);
+            LINE_FILE       := SUBSTR(LINE_FILE,
+                                      INSTR(LINE_FILE, ',', 1) + 1);
+            a               := 10;
+          ELSIF V_NBR = 11 THEN
+            V_HelperNumber2 := SUBSTR(LINE_FILE,
+                                      1,
+                                      INSTR(LINE_FILE, ',', 1) - 1);
+            LINE_FILE       := SUBSTR(LINE_FILE,
+                                      INSTR(LINE_FILE, ',', 1) + 1);
+            a               := 11;
+          ELSIF V_NBR = 12 THEN
+            V_HelperNumber3 := SUBSTR(LINE_FILE,
+                                      1,
+                                      INSTR(LINE_FILE, ',', 1) - 1);
+            LINE_FILE       := SUBSTR(LINE_FILE,
+                                      INSTR(LINE_FILE, ',', 1) + 1);
+            a               := 12;
+          ELSIF V_NBR = 13 THEN
+            V_HelperNumber4 := SUBSTR(LINE_FILE,
+                                      1,
+                                      INSTR(LINE_FILE, ',', 1) - 1);
+            LINE_FILE       := SUBSTR(LINE_FILE,
+                                      INSTR(LINE_FILE, ',', 1) + 1);
+            a               := 13;
+          ELSIF V_NBR = 14 THEN
+            V_LoadOutReferenceNumber := SUBSTR(LINE_FILE,
+                                               1,
+                                               INSTR(LINE_FILE, ',', 1) - 1);
+            LINE_FILE                := SUBSTR(LINE_FILE,
+                                               INSTR(LINE_FILE, ',', 1) + 1);
+            a                        := 14;
+          ELSIF V_NBR = 15 THEN
+            V_LoadOutRemark := SUBSTR(LINE_FILE,
+                                      1,
+                                      INSTR(LINE_FILE, ',', 1) - 1);
+            LINE_FILE       := SUBSTR(LINE_FILE,
+                                      INSTR(LINE_FILE, ',', 1) + 1);
+            a               := 15;
+            ---
+          ELSIF V_NBR = 16 THEN
+            V_RequestDate := SUBSTR(LINE_FILE,
+                                    1,
+                                    INSTR(LINE_FILE, ',', 1) - 1);
+            LINE_FILE     := SUBSTR(LINE_FILE, INSTR(LINE_FILE, ',', 1) + 1);
+            IF V_RequestDate = '                ' THEN
+              V_REQ_DATE := NULL;
+            ELSE
+              V_REQ_DATE := TO_DATE(V_RequestDate, 'MM/DD/YYYY HH24:MI');
+            END IF;
+          
+            a := 16;
+          ELSIF V_NBR = 17 THEN
+            V_SecurityCode := SUBSTR(LINE_FILE,
+                                     1,
+                                     INSTR(LINE_FILE, ',', 1) - 1);
+            LINE_FILE      := SUBSTR(LINE_FILE,
+                                     INSTR(LINE_FILE, ',', 1) + 1);
+            a              := 17;
+          ELSIF V_NBR = 18 THEN
+            V_LOADNUMBER := SUBSTR(LINE_FILE,
+                                   1,
+                                   INSTR(LINE_FILE, ',', 1) - 1);
+            LINE_FILE    := SUBSTR(LINE_FILE, INSTR(LINE_FILE, ',', 1) + 1);
+            a            := 18;
+          ELSIF V_NBR = 19 THEN
+            V_LOADREQUESTNUMBER := SUBSTR(LINE_FILE,
+                                          1,
+                                          INSTR(LINE_FILE, ',', 1) - 1);
+            LINE_FILE           := SUBSTR(LINE_FILE,
+                                          INSTR(LINE_FILE, ',', 1) + 1);
+            a                   := 19;
+          ELSIF V_NBR = 20 THEN
+            V_TransmitIndicator := SUBSTR(LINE_FILE,
+                                          1,
+                                          INSTR(LINE_FILE, ',', 1) - 1);
+            LINE_FILE           := SUBSTR(LINE_FILE,
+                                          INSTR(LINE_FILE, ',', 1) + 1);
+            a                   := 20;
+          ELSIF V_NBR = 21 THEN
+            V_VoidIndicator := SUBSTR(LINE_FILE,
+                                      1,
+                                      INSTR(LINE_FILE, ',', 1) - 1);
+            LINE_FILE       := SUBSTR(LINE_FILE,
+                                      INSTR(LINE_FILE, ',', 1) + 1);
+            a               := 21;
+          ELSIF V_NBR = 22 THEN
+            V_InventoryKey := SUBSTR(LINE_FILE,
+                                     1,
+                                     INSTR(LINE_FILE, ',', 1) - 1);
+            LINE_FILE      := SUBSTR(LINE_FILE,
+                                     INSTR(LINE_FILE, ',', 1) + 1);
+            a              := 22;
+          ELSIF V_NBR = 23 THEN
+            V_DetailKey := SUBSTR(LINE_FILE,
+                                  1,
+                                  INSTR(LINE_FILE, ',', 1) - 1);
+            LINE_FILE   := SUBSTR(LINE_FILE, INSTR(LINE_FILE, ',', 1) + 1);
+            a           := 23;
+          ELSIF V_NBR = 24 THEN
+            V_Username := SUBSTR(LINE_FILE, 1, INSTR(LINE_FILE, ',', 1) - 1);
+            LINE_FILE  := SUBSTR(LINE_FILE, INSTR(LINE_FILE, ',', 1) + 1);
+            a          := 24;
+          ELSIF V_NBR = 25 THEN
+            V_PrinterNumber := SUBSTR(LINE_FILE,
+                                      1,
+                                      INSTR(LINE_FILE, ',', 1) - 1);
+            LINE_FILE       := SUBSTR(LINE_FILE,
+                                      INSTR(LINE_FILE, ',', 1) + 1);
+            a               := 25;
+          ELSIF V_NBR = 26 THEN
+            V_NoofPrints := SUBSTR(LINE_FILE,
+                                   1,
+                                   INSTR(LINE_FILE, ',', 1) - 1);
+            LINE_FILE    := SUBSTR(LINE_FILE, INSTR(LINE_FILE, ',', 1) + 1);
+            a            := 26;
+          ELSIF V_NBR = 27 THEN
+            V_UNLOADTYPE := SUBSTR(LINE_FILE,
+                                   1,
+                                   INSTR(LINE_FILE, ',', 1) - 1);
+            LINE_FILE    := SUBSTR(LINE_FILE, INSTR(LINE_FILE, ',', 1) + 1);
+            -- Q655718 MOD BY INFOSYS 
+            /*
+            ELSE
+              V_SUBWAREHOUSECODE := SUBSTR(LINE_FILE,1,8);
+            END IF;
+            */
+            a := 27;
+          ELSIF V_NBR = 28 THEN
+            V_SUBWAREHOUSECODE := SUBSTR(LINE_FILE,
+                                         1,
+                                         INSTR(LINE_FILE, ',', 1) - 1);
+            IF V_SUBWAREHOUSECODE IS NULL THEN
+              IF INSTR(LINE_FILE, ',', 1) <> 1 THEN
+                V_SUBWAREHOUSECODE := TRIM(LINE_FILE);
+                LINE_FILE          := NULL;
+              END IF;
+            END IF;
+            LINE_FILE := SUBSTR(LINE_FILE, INSTR(LINE_FILE, ',', 1) + 1);
+          
+            a := 28;
+          ELSE
+            V_RequestApproved := SUBSTR(LINE_FILE, 1, 10);
+            IF V_RequestApproved IS NULL THEN
+              V_RequestApproved := '0';
+            END IF;
+          
+            a := 29;
+          END IF;
+          -- Q655718 MOD BY INFOSYS
+          V_NBR := V_NBR + 1;
+          -- Q655718 MOD BY INFOSYS
+          -- IF V_NBR = 29 THEN
+          IF V_NBR = 30 THEN
+            -- Q655718 MOD BY INFOSYS
+            EXIT;
+          END IF;
+        
+        END LOOP;
+      
+        dbms_output.put_line('V_PRINTERNUMBER:' || V_PRINTERNUMBER);
+      
+        a := 100;
+      
+        begin
+          INSERT INTO TEMP_UPLOAD_ITC
+            (ROUTEKEY,
+             TRANSACTIONTYPE,
+             TRANSACTIONDATETIME,
+             DOCUMENTPREFIX,
+             DOCUMENTNUMBER,
+             InventoryNumber,
+             ODEMETERREADING,
+             TRANSFERLOCATION,
+             REFERENCENUMBER,
+             REQUESTDATE,
+             SECURITYCODE,
+             LOADNUMBER,
+             TRANSMITINDICATOR,
+             VOIDINDICATOR,
+             INVENTORYKEY,
+             DETAILKEY,
+             LOCATION_ID,
+             T_SESSION_ID,
+             HELPERNUMBER1,
+             HELPERNUMBER2,
+             HELPERNUMBER3,
+             HELPERNUMBER4,
+             LOADOUTREFERENCENUMBER,
+             LOADOUTREMARK,
+             LOADREQUESTNUMBER,
+             USERNAME,
+             PRINTERNUMBER,
+             PRINT_NO,
+             UNLOADTYPE,
+             SUBWAREHOUSECODE
+             -- Q655718 MOD BY INFOSYS
+            ,
+             RequestApproved
+             -- Q655718 MOD BY INFOSYS
+             )
+          
+          VALUES
+            (TO_NUMBER(V_RouteKey),
+             TO_NUMBER(V_TransactionType),
+             TO_DATE(V_TransactionDateTime, 'MM/DD/YYYY HH24:MI'),
+             TO_NUMBER(V_DocumentPrefix),
+             V_DocumentNumber,
+             V_InventoryNumber,
+             TO_NUMBER(V_OdemeterReading),
+             TO_NUMBER(V_TransferLocation),
+             TO_NUMBER(V_ReferenceNumber),
+             V_REQ_DATE,
+             TO_NUMBER(V_SecurityCode),
+             TO_NUMBER(V_LOADNUMBER),
+             TO_NUMBER(V_TransmitIndicator),
+             TO_NUMBER(V_VoidIndicator),
+             TO_NUMBER(V_InventoryKey),
+             TO_NUMBER(V_DetailKey),
+             '10',
+             TO_NUMBER('989999'),
+             REPLACE(REPLACE(V_HELPERNUMBER1, '"', ''), ' ', ''),
+             REPLACE(REPLACE(V_HELPERNUMBER2, '"', ''), ' ', ''),
+             REPLACE(REPLACE(V_HELPERNUMBER3, '"', ''), ' ', ''),
+             REPLACE(REPLACE(V_HELPERNUMBER4, '"', ''), ' ', ''),
+             REPLACE(V_LOADOUTREFERENCENUMBER, '"', ''),
+             REPLACE(V_LOADOUTREMARK, '"', ''),
+             V_LOADREQUESTNUMBER,
+             REPLACE(REPLACE(V_USERNAME, '"', ''), ' ', ''),
+             1,--TO_NUMBER(V_PRINTERNUMBER),
+             TO_NUMBER(V_NoofPrints),
+             TO_NUMBER(V_UNLOADTYPE),
+             TO_NUMBER(DECODE(V_SUBWAREHOUSECODE,
+                              0,
+                              NULL,
+                              V_SUBWAREHOUSECODE))
+             -- Q655718 MOD BY INFOSYS
+            ,
+             TO_NUMBER(V_RequestApproved)
+             -- Q655718 MOD BY INFOSYS
+             );
+        
+        EXCEPTION
+        
+          WHEN OTHERS THEN
+          
+            dbms_output.put_line(sqlerrm);
+        end;
+      END IF;
+      a := 101;
+    
+    EXCEPTION
+      WHEN NO_DATA_FOUND THEN
+        EXIT;
+    END;
+  
+  END LOOP;
+
+  UTL_FILE.FCLOSE(OUT_FILE);
+
+  P_PROCEED := 'Y';
+  dbms_output.put_line(a);
+EXCEPTION
+
+  WHEN OTHERS THEN
+    dbms_output.put_line('a:' || a);
+    dbms_output.put_line(sqlerrm);
+  
+  --   select * from TEMP_UPLOAD_ITC  
+
+END UPLOAD_ITC;
+
+--select * from TEMP_UPLOAD_ITC   where t_session_id = 989999 for update
+
+  ) 
+  
+  
+  
+  
+  				
+ADJUSTMENT_TYPE_ID	tran_type	TRN_TYP_NM		
+	5	Invoice	1802922.38	290
+	1	Payment	-1834176.18	255
+202	11	Credit	-85788.23	156
+207	12	Debit	117175.66	28
+		6	-534.08	6
+		7	534.08	2
+				
+				
+			133.63	
+				
+		'5-1-11+12'		
+sl_fl_tr				
+sl_fl_tr_bk				
+				
+header	inv_hdr	paym_hdr	adjustment	
+				
+detail	inv_dtl	payment_invoice	adjustment_invoice	
+				
+				
+header	inv_hdr_a	paym_hdr_a	adjustment_a	
+				
+detail	inv_dtl_a	payment_invoice_a	adjustment_invoice_a	
+
+select aa.session_id,
+       aa.session_serial#,
+       b.username,
+       to_date(to_char(aa.start_time, 'mm/dd/yyyy HH24:mi:ss'),
+               'mm/dd/yyyy HH24:mi:ss') start_time,
+       to_date(to_char(aa.end_time, 'mm/dd/yyyy HH24:mi:ss'),
+               'mm/dd/yyyy HH24:mi:ss') end_time
+from (select session_id,
+               session_serial#,
+               USER_ID,
+               min(sample_time) start_time,
+               max(sample_time) end_time
+          from V$ACTIVE_SESSION_HISTORY
+         where sample_time >
+               to_timestamp(to_char(sysdate-1,'yyyy-mm-dd')||' 0:00:00.001',
+                            'syyyy-mm-dd hh24:mi:ss.ff')
+           and sample_time <
+               to_timestamp(to_char(sysdate-1,'yyyy-mm-dd')||' 23:59:59.001',
+                            'syyyy-mm-dd hh24:mi:ss.ff')
+        --and a.user_id=b.user_id
+         group by session_id, session_serial#, user_id) aa,
+       dba_users b
+where aa.user_id = b.user_id
+order by 4;
+
+
+
+ENABLEMIDDAYTELE VARCHAR2(2); 	
+BEGIN	
+		SELECT TABV_VALUE INTO ENABLEMIDDAYTELE FROM TABLE_VALUES 
+		WHERE TABV_TABF_NAME = 'ENABLEMIDDAYTELECOM'
+		AND TABV_TAB_NAME = 'LOCATION'
+		AND TABV_TAB_CODE = P_LOCATION; 
+		
+		IF ENABLEMIDDAYTELE IS NULL THEN
+	  	ENABLEMIDDAYTELECOM:=:PARAMETER.HHENMDTL;
+		ELSE
+			ENABLEMIDDAYTELECOM:=ENABLEMIDDAYTELE;
+		END IF;
+	EXCEPTION
+	  WHEN NO_DATA_FOUND THEN 
+  	  ENABLEMIDDAYTELECOM:=:PARAMETER.HHENMDTL;
+    WHEN OTHERS THEN
+      NULL;
+			
+	END;
+
+--trigger
+(
+组成部分：
+1.       触发时间，描述：触发时间的时间次序，可能值：after,before
+2.       触发事件，描述：DML语句是触发时间，可能值insert、update、delete
+3.       触发器类型，描述：触发器被执行的次数，可能值statement,row
+4.       触发体，描述该触发器将要执行的动作，可能值完整的PLSQL块
+3.9.1DML触发器的类型
+语句级触发器，行级触发器，
+行级触发器和语句级触发器的区别：
+1.       触发的次数不同，如果DML语句只影响一行，则语句级和行级触发器效果一样；
+2.       如果影响多行，则行级触发器触发的次数比语句级触发器触发的次数多；
+3.9.2 DML触发器的触发顺序
+根据触发的时间，类型不同，可以组合为四种DML触发器，
+1.       在sql语句执行之前执行一次：
+a         触发时间:before
+b        级别statement
+2.        sql语句影响的每条记录被uupdate,delete或者insert之前执行一次
+a         触发时间：before
+b         级别：row
+3.        sql语句影响的每条记录被update,delete或insert之后执行一次
+a         触发时间：after
+b         基本：row 
+4.        sql语句执行之后执行一次
+a         促发时间：after
+b         级别：statement
+3.9.2 DML行级触发器
+         for each row子句创建一个行级触发器，使其在受到触发器事件影响每一行都被触发，例如：
+         create or replace trigger trig_name
+         {before |after } insert [or update …]
+         on tab_name
+         for each row [when restricting_condition]
+         PLSQL block;
+3.9.3 行级触发器：OLD和：NEW
+在列名前加上：OLD标示符表示该列变化前的值，加上：NEW标示符表示变化后的值；
+因此触发事件：
+1.        insert事件，：OLD.列名（所有的字段是NULL），：NEW.列名(insert语句要插入的值)
+注：（存储过程：oracle：PLSQL，Pro*C, 数据库的值取出进行操作自后，要存放入数据库用存储过程）
+2.        update事件, OLD.列名（在update之前该列的原始值），NEW.列名(update语句要更细的新值)，
+3.        delete事件，OLD.列名（delete行之前列的原始值），NEW.列名（所有字段为null）;
+)
+
+---先加断点，再测试trigger
+(
+CREATE OR REPLACE TRIGGER TRIG_ORDER_HDR_TOT_NM_LINES
+  AFTER INSERT OR DELETE ON ORDER_DTL
+  FOR EACH ROW
+DECLARE
+  V_TOT_NM_LINES NUMBER :=0 ;
+
+  PRAGMA AUTONOMOUS_TRANSACTION ;
+BEGIN
+-- RAISE_APPLICATION_ERROR(-20001,'V_TOT_NM_LINES:'||V_TOT_NM_LINES|| 'NEW.ORDER_ID'||:NEW.ORDER_ID||  'old:'||:OLD.ORDER_ID);
+  IF INSERTING THEN
+      /*SELECT NVL(COUNT(*),0)+1
+      INTO V_TOT_NM_LINES
+      FROM ORDER_DTL
+      WHERE LOCATION_ID = :NEW.LOCATION_ID
+      AND ORDER_ID = :NEW.ORDER_ID;
+      dbms_output.put_line('V_TOT_NM_LINES:'||V_TOT_NM_LINES);*/
+      UPDATE ORDER_HDR
+      SET TOT_NM_LINES = TOT_NM_LINES+1
+      WHERE LOCATION_ID = :NEW.LOCATION_ID
+      AND ORDER_ID = :NEW.ORDER_ID;
+      COMMIT;
+      --UPDATE_ORDER_HDR_TOTLINES(:NEW.LOCATION_ID,:NEW.ORDER_ID);
+
+  ELSIF DELETING THEN
+      /*SELECT NVL(COUNT(*),0)-1
+      INTO V_TOT_NM_LINES
+      FROM ORDER_DTL
+      WHERE LOCATION_ID = :OLD.LOCATION_ID
+      AND ORDER_ID = :OLD.ORDER_ID;
+      dbms_output.put_line('V_TOT_NM_LINES:'||V_TOT_NM_LINES);*/
+      -- RAISE_APPLICATION_ERROR(-20001,V_TOT_NM_LINES|| 'NEW.ORDER_ID'||:NEW.ORDER_ID||  'old:'||:OLD.ORDER_ID);
+      UPDATE ORDER_HDR
+      SET TOT_NM_LINES = TOT_NM_LINES-1
+      WHERE LOCATION_ID = :OLD.LOCATION_ID
+      AND ORDER_ID = :OLD.ORDER_ID;
+      COMMIT;
+      --UPDATE_ORDER_HDR_TOTLINES(:OLD.LOCATION_ID,:OLD.ORDER_ID);
+  END IF;
+  COMMIT;
+END;
+/
+
+create or replace procedure UPDATE_ORDER_HDR_TOTLINES
+AS
+
+--TEMP_LOCATION VARCHAR2(20);
+
+BEGIN
+/*CURSOR C_LOCATION IS
+SELECT DISTINCT LOCATION_id FROM LOCATION;
+
+OPEN C_LOCATION;
+FETCH C_LOCATION INTO TEMP_LOCATION;
+CLOSE C_LOCATION;*/
+
+FOR I IN (SELECT DISTINCT LOCATION_id FROM LOCATION) LOOP
+   UPDATE ORDER_HDR OH
+   SET TOT_NM_LINES=(SELECT COUNT(1)
+                      FROM ORDER_DTL OD
+                      WHERE OD.LOCATION_ID = OH.LOCATION_ID
+                      AND   OD.ORDER_ID = OH.ORDER_ID)
+   WHERE OH.LOCATION_ID = I.LOCATION_id;
+   --AND   OH.ORDER_ID = P_ORDERID;
+   COMMIT;
+END LOOP;
+END;
+/
+----FINAL
+(
+ALTER TABLE ORDER_HDR MODIFY TOT_NM_LINES DEFAULT 0;
+ALTER TABLE INV_HDR MODIFY TOT_NM_LINES DEFAULT 0;
+
+--SD12598329
+CREATE OR REPLACE PROCEDURE UPDATE_ORDER_HDR_TOTLINES 
+AS
+TEMP_NM NUMBER := 0;
+BEGIN
+  FOR I IN (SELECT DISTINCT LOCATION_ID, ORDER_ID FROM ORDER_HDR) LOOP
+     UPDATE ORDER_HDR OH 
+        SET TOT_NM_LINES = (SELECT COUNT(1) FROM ORDER_DTL OD 
+                            WHERE OD.LOCATION_ID = OH.LOCATION_ID 
+                            AND OD.ORDER_ID = OH.ORDER_ID
+                            AND OD.ORDER_ID = I.ORDER_ID
+                            AND OD.LOCATION_ID = I.LOCATION_ID) 
+        WHERE OH.ORDER_ID = I.ORDER_ID
+        AND OH.LOCATION_ID = I.LOCATION_ID; 
+        TEMP_NM := TEMP_NM + 1;
+        IF TEMP_NM = 5000 THEN
+           COMMIT; 
+           TEMP_NM := 0;
+        END IF;
+  END LOOP;
+  COMMIT;
+END;
+/
+
+--SD12598329
+CREATE OR REPLACE TRIGGER TRIG_ORDER_HDR_TOT_NM_LINES
+  AFTER INSERT OR DELETE ON ORDER_DTL
+  FOR EACH ROW
+DECLARE
+  PRAGMA AUTONOMOUS_TRANSACTION;
+BEGIN
+  IF INSERTING THEN 
+    UPDATE ORDER_HDR
+       SET TOT_NM_LINES = TOT_NM_LINES + 1
+     WHERE LOCATION_ID = :NEW.LOCATION_ID
+       AND ORDER_ID = :NEW.ORDER_ID;
+    COMMIT;
+  ELSIF DELETING THEN 
+    UPDATE ORDER_HDR
+       SET TOT_NM_LINES = TOT_NM_LINES - 1
+     WHERE LOCATION_ID = :OLD.LOCATION_ID
+       AND ORDER_ID = :OLD.ORDER_ID;
+    COMMIT;
+  END IF;
+  COMMIT;
+END;
+/
+
+--SD12598329
+CREATE OR REPLACE PROCEDURE UPDATE_INV_HDR_TOTLINES
+AS
+TEMP_NM NUMBER := 0;
+BEGIN
+FOR I IN (SELECT INVOICE_ID,LOCATION_ID,INV_TYP_CD FROM INV_HDR WHERE CREATED_DT >= TO_DATE('01012017','DDMMYYYY')) LOOP
+   UPDATE INV_HDR IH
+      SET TOT_NM_LINES =
+          (SELECT COUNT(1)
+             FROM INV_DTL IDT
+            WHERE IDT.LOCATION_ID = IH.LOCATION_ID
+              AND IDT.INV_TYP_CD = IH.INV_TYP_CD
+              AND IDT.INVOICE_ID = IH.INVOICE_ID
+              AND IDT.INVOICE_ID = I.INVOICE_ID
+              AND IDT.LOCATION_ID = I.LOCATION_ID
+              AND IDT.INV_TYP_CD = I.INV_TYP_CD
+              )
+    WHERE IH.INVOICE_ID = I.INVOICE_ID
+    AND IH.LOCATION_ID = I.LOCATION_ID
+    AND IH.INV_TYP_CD = I.INV_TYP_CD;
+  TEMP_NM := TEMP_NM + 1;
+        IF TEMP_NM = 5000 THEN
+           COMMIT; 
+           TEMP_NM := 0;
+        END IF;
+    END LOOP;
+    COMMIT;
+END;
+/
+
+----SD12598329
+CREATE OR REPLACE TRIGGER TRIG_INV_HDR_TOT_NM_LINES
+  AFTER INSERT OR DELETE ON INV_DTL 
+  FOR EACH ROW
+DECLARE
+  PRAGMA AUTONOMOUS_TRANSACTION ;
+BEGIN
+  IF INSERTING THEN      
+      UPDATE INV_HDR
+         SET TOT_NM_LINES = TOT_NM_LINES + 1
+       WHERE LOCATION_ID = :NEW.LOCATION_ID
+         AND INV_TYP_CD = :NEW.INV_TYP_CD
+         AND INVOICE_ID = :NEW.INVOICE_ID;
+      COMMIT;
+  ELSIF DELETING THEN       
+      UPDATE INV_HDR
+         SET TOT_NM_LINES = TOT_NM_LINES - 1
+       WHERE LOCATION_ID = :OLD.LOCATION_ID
+         AND INV_TYP_CD = :OLD.INV_TYP_CD
+         AND INVOICE_ID = :OLD.INVOICE_ID;
+      COMMIT;
+  END IF;
+  COMMIT;
+END;
+/
+
+)
+
+)
+	
+	
+----menus	
+(
+DECLARE
+  L_MAX NUMBER;
+  M_MAX NUMBER;
+BEGIN
+  DELETE PROFILE_MENUS
+   WHERE PRFM_MENU_CODE IN
+         (SELECT MENU_CODE
+            FROM MENUS
+           WHERE MENU_NAME = 'AGAING_CASH_CUST');
+  DELETE MENUS
+  WHERE MENU_NAME = 'AGAING_CASH_CUST';
+  SELECT MAX(MENU_CODE) INTO L_MAX FROM MENUS;
+  SELECT MAX(MENU_SEQ) INTO M_MAX FROM MENUS WHERE MENU_MENU_CODE = 30;
+  INSERT INTO MENUS (MENU_CODE, MENU_SEQ, MENU_DESC1, MENU_DESC2, MENU_TCODE, MENU_TYPE, MENU_NAME, MENU_LEVEL, MENU_ICON, MENU_MENU_CODE, UPDATED_DT, UPDATED_BY)
+  VALUES (L_MAX+1, M_MAX+10, 'Cash Customer Aging Report', 'Cash Customer Aging Report', 'AGAINGCC', 'MENT2', 'AGAING_CASH_CUST', 2, NULL, 30, NULL, NULL);
+  COMMIT;
+END;
+/
+DECLARE
+  CURSOR CUR_PROFILE IS
+  SELECT PM.PRFM_PRF_CODE
+    FROM MENUS M, PROFILE_MENUS PM
+   WHERE PM.PRFM_MENU_CODE = M.MENU_CODE
+     AND M.MENU_CODE IN (SELECT MIN(S_M.MENU_CODE)
+                           FROM MENUS S_M
+                          WHERE S_M.MENU_MENU_CODE = 30);
+  CURSOR CUR_MENU IS
+  SELECT MENU_CODE
+    FROM MENUS
+   WHERE MENU_NAME = 'AGAING_CASH_CUST';
+  V_MENU_ID NUMBER;
+BEGIN
+  OPEN CUR_MENU;
+  FETCH CUR_MENU INTO V_MENU_ID;
+  CLOSE CUR_MENU;
+  FOR I IN CUR_PROFILE LOOP
+    INSERT INTO PROFILE_MENUS
+      (PRFM_CODE,
+       PRFM_DATE,
+       PRFM_SDATE,
+       PRFM_EDATE,
+       PRFM_MENU_CODE,
+       PRFM_PRF_CODE,
+       UPDATED_DT,
+       UPDATED_BY,
+       CREATED_DT,
+       CREATED_BY)
+    VALUES
+      (SEQ_PRFM_CODE.NEXTVAL,
+       SYSDATE,
+       SYSDATE,
+       NULL,
+       V_MENU_ID,
+       I.PRFM_PRF_CODE,
+       NULL,
+       NULL,
+       SYSDATE,
+       'PSD');
+  END LOOP;
+  COMMIT;
+END;
+/
+
+)
+
+---for left join problem 
+(
+   	select count(1) into v_count from item where item_id = I.T_Itemnumber;
+   	if v_count > 0 then
+   			select MEMO_LINE_ID_REGULAR into v_T_DEFAULTRETAILPRICE from item where item_id = I.T_Itemnumber;
+   	else
+   		v_T_DEFAULTRETAILPRICE := I.T_DEFAULTRETAILPRICE;
+   	end if;
+)
