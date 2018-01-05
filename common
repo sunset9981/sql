@@ -1,3 +1,14 @@
+PSD/KSAPRD456@SA02PRD
+SA02PRD=
+  (DESCRIPTION =
+    (ADDRESS_LIST =
+      (ADDRESS = (PROTOCOL = TCP)(HOST = 30.185.146.65)(PORT = 1521))
+    )
+    (CONNECT_DATA =
+      (SID= SA02PRD)
+    )
+  )  
+  
 AP user guide
 GL,General Ledger 总账
 AP,Accounts payable 应付账款
