@@ -1,0 +1,2426 @@
+--1查找系统用户基本信息 author:dezai
+
+SELECT  user_id, user_name, description, employeE_id, person_party_id
+  FROM fnd_user;
+
+--2查找供应商基本信息(供应商,供应商地点,联系人) author:dezai
+
+SELECT pv.vendor_id vendor_id,
+       pvsa.vendor_site_id vendor_site_id,
+       pv.vendor_name vendor_name,
+       pvsa.vendor_site_code vendor_site_code,
+       pvsa.org_id org_id,
+       pv.segment1 vendor_code,
+       pvc.area_code || pvc.phone vendor_phone,
+       pvc.fax_area_code || pvc.fax vendor_fax,
+       pvsa.terms_id terms_id,
+       pvsa.vat_code vat_code,
+       pvc.last_name || pvc.middle_name || pvc.first_name contact_man
+  FROM po_vendors pv, po_vendor_sites_all pvsa, po_vendor_contacts pvc
+ WHERE pv.vendor_id = pvsa.vendor_id
+   AND pvsa.vendor_site_id = pvc.vendor_site_id
+ ORDER BY org_id DESC;
+
+--3查找所有的interface表 author:dezai
+
+SELECT *
+  FROM dba_objects db
+ WHERE db.object_type = 'TABLE'
+   AND db.object_name LIKE '%INTERFACE%';
+
+--4查找对应模块的interface表 author:dezai
+
+SELECT *
+  FROM dba_objects db
+ WHERE db.object_type = 'TABLE'
+   AND db.object_name LIKE '%INTERFACE%'
+   AND owner LIKE 'PO';
+
+--5查找用户当前的状态 author:dezai
+
+SELECT substr(v$session.username, 1, 8) username,
+       v$session.osuser osuser,
+       --        DECODE(V$SESSION.SERVER,'DEDICATED','D','SHARED','S','O') SERVER,
+       v$sqlarea.disk_reads disk_reads,
+       v$sqlarea.buffer_gets buffer_gets,
+       substr(v$session.lockwait, 1, 10) lockwait,
+       v$session.process pid,
+       v$session_wait.event event,
+       v$sqlarea.sql_text SQL
+  FROM v$session_wait, v$sqlarea, v$session
+ WHERE v$session.sql_address = v$sqlarea.address
+   AND v$session.sql_hash_value = v$sqlarea.hash_value
+   AND v$session.sid = v$session_wait.sid(+)
+   AND v$session.status = 'ACTIVE'
+   AND v$session_wait.event != 'client message'
+ ORDER BY v$session.lockwait ASC, v$session.username;
+
+--6查找用户的职责 author:dezai
+SELECT c.user_name           AS login_name,
+       d.full_name           AS employee_name,
+       f.name                AS department_name,
+       a.user_id             AS user_id,
+       a.responsibility_id   AS responsibility_id,
+       b.responsibility_name AS responsibility_name
+  FROM fnd_user_resp_groups         a,
+       fnd_responsibility_vl        b,
+       fnd_user                     c,
+       hr_employees                 d,
+       per_assignments_f            e,
+       hr_all_organization_units_tl f
+ WHERE a.user_id = c.user_id
+   AND c.employee_id = d.employee_id
+   AND c.employee_id = e.person_id
+   AND e.organization_id = f.organization_id
+   AND a.responsibility_id = b.responsibility_id
+   AND SYSDATE > e.effective_start_date
+   AND SYSDATE < e.effective_end_date
+ ORDER BY c.description,
+          c.user_name,
+          a.responsibility_id
+          
+          --7查找组织信息 author:dezai
+            SELECT organization_id   id,
+                   organization_code 代码,
+                   organization_name 名称,
+                   operating_unit    营运ouid
+              FROM org_organization_definitions ood;
+
+
+--8查找物料基本信息 author:dezai
+
+SELECT organization_id,   --组织id,
+       inventory_item_id, --物料id,
+       segment1     ,     --物料代码,
+       description  ,     --物料描述,
+       primary_uom_code  --物料单位
+  FROM mtl_system_items_b msib;
+
+--9查找付款条件 author:dezai
+
+SELECT at.term_id id, at.name , at.description  FROM ap_terms at;
+
+--10查找税码 author:dezai
+
+SELECT atca.tax_id          id,
+       atca.name            名称,
+       atca.set_of_books_id 所属账套id,
+       atca.description     描述,
+       atca.org_id          组织id
+  FROM ap_tax_codes_all atca;
+
+--11查询所有应用模块的ID,对应的职责ID,模块的简称代码 author:dezai
+
+SELECT resp.application_id,
+       resp.responsibility_id,
+       resp.responsibility_key,
+       appl.application_short_name
+  FROM fnd_responsibility resp, fnd_application appl
+ WHERE resp.application_id = appl.application_id;
+
+--12查询当前系统登录的用户数 author:dezai
+
+SELECT COUNT(DISTINCT d.user_name)
+  FROM apps.fnd_logins a, v$session b, v$process c, apps.fnd_user d
+ WHERE b.paddr = c.addr
+   AND a.pid = c.pid
+   AND a.spid = b.process
+   AND d.user_id = a.user_id
+   AND (d.user_name = 'USER_NAME' OR 1 = 1);
+
+--13查询系统当前物料单位列表 author:dezai
+
+SELECT muom.unit_of_measure,
+       muom.uom_code,
+       muom.description,
+       muom.uom_class,
+       muom.source_lang
+  FROM mtl_units_of_measure muom;
+
+--14OU 库存组织与子库存 author:dezai
+
+SELECT hou.organization_id          ou_org_id,
+       hou.name                     ou_name,
+       ood.organization_id          org_org_id,
+       ood.organization_code        org_org_code,
+       msi.secondary_inventory_name,
+       msi.description
+  FROM hr_organization_information  hoi,
+       hr_organization_units        hou,
+       org_organization_definitions ood,
+       mtl_secondary_inventories    msi
+ WHERE hoi.org_information1 = 'OPERATING_UNIT'
+   AND hoi.organization_id = hou.organization_id
+   AND ood.operating_unit = hoi.organization_id
+   AND ood.organization_id = msi.organization_id;
+
+--15查询库存物料现有量 author:dezai
+SELECT ms.*
+  FROM mtl_supply ms, po_headers_all ph
+ WHERE ms.po_header_id = ph.po_header_id
+   AND ph.segment1 = '2009001' --PO号
+ ORDER BY ms.po_header_id,
+          ms.po_release_id,
+          ms.po_line_id,
+          ms.po_line_location_id,
+          ms.po_distribution_id;
+
+--16 查找死锁进程 author:dezai
+
+SELECT vs.username,
+       lo.object_id,
+       sob.name,
+       lo.session_id,
+       vs.serial#,
+       lo.oracle_username,
+       lo.os_user_name,
+       lo.process
+  FROM v$locked_object lo, v$session vs, sys.obj$ sob
+ WHERE lo.session_id = vs.sid
+   AND sob.obj# = lo.object_id;
+
+--17 中断死锁进程 author:dezai
+
+ALTER system kill session 'sid,serial#';
+
+--18 查找死锁进程2 author:dezai
+
+SELECT c.owner,
+       c.object_name,
+       c.object_type,
+       fu.user_name            locking_fnd_user_name,
+       fl.start_time           locking_fnd_user_login_time,
+       vs.module,
+       vs.machine,
+       vs.osuser,
+       vlocked.oracle_username,
+       vs.sid,
+       vp.pid,
+       vp.spid                 AS os_process,
+       vs.serial#,
+       vs.status,
+       vs.saddr,
+       vs.audsid,
+       vs.process
+  FROM fnd_logins      fl,
+       fnd_user        fu,
+       v$locked_object vlocked,
+       v$process       vp,
+       v$session       vs,
+       dba_objects     c
+ WHERE vs.sid = vlocked.session_id
+   AND vlocked.object_id = c.object_id
+   AND vs.paddr = vp.addr
+   AND vp.spid = fl.process_spid(+)
+   AND vp.pid = fl.pid(+)
+   AND fl.user_id = fu.user_id(+)
+      --AND c.object_name LIKE '%' || UPPER('&tab_name_leaveblank4all') || '%'
+   AND nvl(vs.status, 'XX') != 'KILLED';
+
+
+
+call fnd_global.APPS_INITIALIZE(1318,50583,401)
+
+select fnd_profile.VALUE('ORG_ID') FROM DUAL
+
+select * from hr_operating_units hou where hou.organization_id=204
+
+--fnd
+
+select * from fnd_application   
+
+select * from fnd_application_tl where application_id=101
+
+select * from fnd_application_vl where application_id = 101
+
+----值集
+
+select * from fnd_flex_value_sets   
+
+select * from fnd_flex_values       
+
+select * from fnd_flex_values_vl
+
+----弹性域
+
+select * from fnd_id_flexs         
+
+select * from fnd_id_flex_structures where id_flex_code='GL#'
+
+select * from fnd_id_flex_segments where id_flex_code='GL#' and id_flex_num=50671
+
+select * from fnd_profile_options_vl
+
+select * from fnd_concurrent_programs    程序表
+
+select * from fnd_concurrent_requests    请求表
+
+select * from fnd_concurrent_processes   进程表
+
+--inv(库存)
+
+select * from org_organization_definitions   库存组织
+
+select * from mtl_parameters                 组织参数
+
+select * from mtl_system_items_b where inventory_item_id = 171 and organization_id=204 物料表
+
+select * from mtl_secondary_inventories    子库存
+
+select * from mtl_item_locations           货位
+
+select * from mtl_lot_numbers              批次
+
+select * from mtl_onhand_quantities        现有量表
+
+select * from mtl_serial_numbers           序列
+
+select * from mtl_material_transactions    物料事务记录
+
+select * from mtl_transaction_accounts     会计分录
+
+select * from mtl_transaction_types        事务类型
+
+select * from mtl_txn_source_types         事务来源类型
+
+select * from mfg_lookups ml where ml.LOOKUP_TYPE = 'MTL_TRANSACTION_ACTION'
+
+--po（采购订单）
+
+select * from po_requisition_headers_all   请求头
+
+select * from po_requisition_lines_all     请求行
+
+select * from po_headers_all               订单头
+
+select * from po_lines_all                 订单行
+
+select * from po_line_locations_all       
+
+select * from po_distributions_all          分配
+
+select * from po_releases_all               发送
+
+select * from rcv_shipment_headers          采购接收头
+
+select * from rcv_shipment_lines            采购接收行
+
+select * from rcv_transactions              接收事务处理
+
+select * from po_agents                    
+
+select * from po_vendors                    订单
+
+select * from po_vendor_sites_all
+
+--oe（销售）
+
+select * from ra_customers                  客户
+
+select * from ra_addresses_all              地址
+
+select * from ra_site_uses_all              用户
+
+select * from oe_order_headers_all          销售头
+
+select * from oe_order_lines_all            销售行
+
+select * from wsh_new_deliveries            发送
+
+select * from wsh_delivery_details
+
+select * from wsh_delivery_assignments
+
+--gl（总账）
+
+select * from gl_sets_of_books     总帐
+
+select * from gl_code_combinations gcc where gcc.summary_flag='Y'   科目组合
+
+select * from gl_balances          科目余额
+
+select * from gl_je_batches        凭证批
+
+select * from gl_je_headers        凭证头
+
+select * from gl_je_lines          凭证行
+
+select * from gl_je_categories     凭证分类
+
+select * from gl_je_sources        凭证来源
+
+select * from gl_summary_templates 科目汇总模板
+
+select * from gl_account_hierarchies 科目汇总模板层次
+
+--ar（应收）
+
+select * from ar_batches_all                 事务处理批
+
+select * from ra_customer_trx_all            发票头
+
+select * from ra_customer_trx_lines_all      发票行
+
+select * from ra_cust_trx_line_gl_dist_all   发票分配
+
+select * from ar_cash_receipts_all           收款
+
+select * from ar_receivable_applications_all 核销
+
+select * from ar_payment_schedules_all       发票调整
+
+select * from ar_adjustments_all             会计分录
+
+select * from ar_distributions_all           付款计划
+
+--ap（应付）
+
+select * from ap_invoices_all               发票头
+
+select * from ap_invoice_distributions_all 发票行
+
+select * from ap_payment_schedules_all      付款计划
+
+select * from ap_check_stocks_all           单据
+
+select * from ap_checks_all                 付款
+
+select * from ap_bank_branches              银行
+
+select * from ap_bank_accounts_all          银行帐号
+
+select * from ap_invoice_payments_all       核销
+
+
+
+========================华丽的分割线=========================
+
+
+
+INV库存
+organization 两个含义:
+1. 经营单位，A/B/C分公司，A下面有A1，A2等工厂，主题目标是为了独立核算此组织
+ORG，ORG_ID;
+ 2. 库存组织，例如制造商的仓库，例如A1，A2等工厂
+Organization_id;
+
+HR_ORGANIZATION_UNITS －
+Org_organization_definitions 
+ Mtl_subinventory_ 库存组织单位
+MTL_PARAMETERS -库存组织参数（没有用ID，直接用name）
+MTL_SYSTEM_ITEMS_b -物料信息（同上，应用了库存组织name）
+MTL_SECONDARY_INVENTORIES -子库存组织 - 
+MTL_ITEM_LOCATTIONS -货位 - SUBINVENTROY_CODE
+
+Mtl_Material_Transactions - (库存)物料事物表
+ 成本 mtl_transaction_accounts
+ transaction_cost是事物成本；
+ACTUAL_COST是通过成本算法计算出来的实际成本，主计量单位
+
+现有量
+汇总历史记录（正负合计）
+Mtl_Material_Transactions
+ MTL_ONHAND_QUANTITIES现有量表，组织/子库存/货位/物品 summary可能按照挑库先进先出统计，如果设置了"不允许负库存"，这样就不可能出现负数
+
+PO
+请购单头表
+Po_Requisition_Headers_all
+行表
+Po_Requisition_lines_all
+采购订单
+PO_HEADER_ALL
+ PO_LINES_ALL
+采购接收－退货/组织间转移/正常状态 都需要使用这个模块
+RCV_TRANSACTIONS
+ 1. 接收100单位货物,放入“待质检”货位
+2. 接受/拒绝
+3. 库存/退回
+ 有三个不同的状态！例如：接收100个，80个接受入库，20个退回，那么有80个接受事务/20个退回事物
+select TRANSACTION_TYPE，DESTINATION_TYPE_CODE from RCV_TRANSACTIONS
+可以看出以下阶段：
+A1.RECEIVE – RECEIVING
+ A2.ACCEPT – RECEIVING
+ A3.DELIERY – INVETORY(影响库存现有量)
+
+如果按照正常模式，最后会触发产生MTL_MATERIAL_TRANSACTIONS
+
+销售订单
+OE_ORDER_headers_all
+ SOLD_FROM_ORG_ID
+ SOLD_TO_ORG_ID 就是客户层
+SHIP_FROM_ORG_ID
+ SHIP_TO_ORG_ID 就是客户收货层
+INVOICE_TO_ORG_ID 就是客户收单层
+DELIVER_TO_ORG_ID
+和客户结构有关
+ 客户 RA_customers 
+客户Address Ra_Addresses
+ Address 货品抵达 site RA_SITE_USES_ALL
+ Address 发票抵达 site 
+ OE_ORDER_LINEs_all
+
+GL凭证
+gl_je_batches
+凭证日期:                DEFAULT_EFFECTIVE_DATE
+会计期间:                DEFAULT_PERIOD_NAME
+原币种凭证批借贷方汇总: RUNNING_TOTAL_DR/CR 比如美元
+ 本位币凭证批借贷方汇总: RUNNING_TOTAL_ACCOUNTED_DR/CR 
+
+gl_je_headers日记账头信息
+批号:     JE_BATCH_ID
+会计期间: PERIOD_NAME
+币种:     CURRENCY_CODE
+汇率类型: CURRENCY_CONVERSION_TYPE
+汇率日期: CURRENCY_CONVERSION_DATE
+帐套:     SET_OF_BOOKS_ID 参考 GL_SETS_OF_BOOKS
+凭证类型: JE_CATEGORY 参考 GL_JE_SOURCES
+凭证来源: JE_SOURCE
+
+gl_je_lines日记账体信息
+CODE_COMBINATION_ID 科目组合编号
+
+GL_BALANCES 总帐余额
+PERIOD_NET_DR/CR 净值
+BEGIN_BALANCE_DR/CR 期初额
+
+AR应收发票
+RA_CUSTOMER_TRX_ALL
+     CUSTOMER_TRX_ID 发票编号
+    BILL_TO_SITE_USE_ID 客户收单方编号
+    PRIMARY_SALES_ID销售员
+REFERENCE是Oracle提供的外部编号输入框，但是由于版本问题和长度(<=30)，不建议用户使用，如果要使用外部编号，请使用说明性弹性域
+
+RA_CUSTOMER_TRX_LINES_ALL
+     LINE_ID            行号
+    INVENTORY_ITEM_ID 可以为空，比如非物料的服务，只在DE script ION中出现 /税行
+    DE script ION      
+     QUANTITY_INVOICE   开票数量
+    LINE_TYPE          行类型 (一般/税)
+     EXTEND_PRICE       本行金额
+ 注意：税行是隐藏行，所以至少会有两行
+
+收款情况
+AR_CASH_RECEIPTS_ALL（还包含了非收款信息）
+    CASH_RECEIPT_ID 内部code
+     RECEIPT_NUMBER   收款号
+    RECEIPT_DATE     收款日期
+    AMOUNT           总额
+    RECEIPT_TYPE     现金/杂项 Cash/Misc
+     FUNCTIONAL_AMOUNT 本位币计量金额
+   UI上为RECEIPTS 
+    核销关系不是一一对应，也不是一次核销100%,UI上右下方的Application 按钮
+   AR_RECEIVABLE_APPLICATIONS_ALL
+     APPLIED_CUSTOMER_TRX_ID   发票编号
+    APPLIED_CUSTOMER_TRX_LINE_ID   发票行编号
+
+    STATUS APP表示核销 /UNAPP表示未核销
+        AMOUNT_APPLIED                 匹配金额
+    注意:红冲收款报表时间跨月的问题；必须联查 AR_CASH_RECEIPTS_ALL和   AR_CASH_RECEIPT_HISTORY_ALL
+
+AP
+应付帐款(是我方人员按照供应商提供的纸张发票信息录入)UI 上的invoice
+ AP_INVOICES_ALL
+
+实际付款PAYMENT
+ AP_CHECKS_ALL
+
+核销关系 同AR，右下方的Payment 按钮
+AP_INVOICE_PAYMENTS_ALL客户余额表，情况比较复杂:比如两个用户合并，应收应付差额，预付款
+
+资产信息FA_ADDITIONS
+名称
+ 编号
+ 分类
+ 数量
+
+资产类别
+FA_CATEGORIES
+
+资产帐簿
+FA_BOOK_CONTROLS 和会计帐簿有什么关系？
+FA_BOOKS 
+ UI中的Inquiry
+ Mothed是折旧方法(直线法/产量法)
+
+FA_DISTRIBUTION_HISTORY分配assignment，给什么部门使用多少
+LOCATION_ID 部门 联查FA_LOCATIONS
+
+折旧信息(分摊方法)
+FA_DEPRN_DETAIL
+ period_counter 折旧期间编号
+
+折旧事务(新增、重建、转移、报废)
+FA_TRANSACTION_HEADERS
+
+
+
+========================华丽的分割线=========================
+
+
+
+fnd_user －－－ 系统用户表
+
+po_vendors －－－ 供应商信息表
+
+po_vendor_sites －－－ 供应商地点信息表
+
+hr_organization_units －－－ 组织及库存组织表
+
+per_people_f －－－ 员工表
+
+wip_entities －－－ 作业名信息表
+
+wip_discrete_jobs －－－ 离散作业表
+
+wip_requirement_operations －－－ 作业名物料需求发放表
+
+po_headers_all －－－ 采购订单头表
+
+po_lines_all －－－ 采购订单行表
+
+po_line_locations_all －－－ 采购行地点表
+
+rcv_transactions －－－ 接收交易表
+
+bom_bill_of_materials －－－ 物料清单表
+
+bom_inventory_components －－－ 物料清单构成表
+
+mtl_system_items －－－ 物料主表
+
+mtl_onhand_quantities －－－ 库存数据表
+
+mtl_item_locations －－－ 项目货位表
+
+mtl_material_transactions －－－ 出入库记录表
+
+mtl_supply －－－ 供应表
+
+mtl_demand －－－ 需求表
+
+
+
+
+
+
+1. OU、库存组织 
+SELECT hou.organization_id ou_org_id, --org_id
+ hou.name ou_name, --ou 名称
+ood.organization_id org_org_id, -- 库存组织 id
+ ood.organization_code org_org_code, -- 库存组织代码
+msi.secondary_inventory_name, -- 子库存名称
+msi.description -- 子库存描述
+FROM hr_organization_information hoi, -- 组织分类表
+hr_operating_units hou, --ou 视图
+org_organization_definitions ood, -- 库存组织定义视图
+mtl_secondary_inventories msi -- 子库存信息表
+WHERE hoi.org_information1 = 'OPERATING_UNIT'
+ AND hoi.organization_id = hou.organization_id
+ AND ood.operating_unit = hoi.organization_id
+ AND ood.organization_id = msi.organization_id
+-- 获取系统 ID
+ call fnd_global.APPS_INITIALIZE( 1318 , 50583 , 401 )
+ select fnd_profile.VALUE( 'ORG_ID' ) FROM DUAL
+ select * from hr_operating_units hou where hou.organization_id= 204
+2. 用户、责任及 HR
+-- 系统责任定义 VIEW(FROM FND_RESPONSIBILITY_TL, FND_RESPONSIBILITY)
+ SELECT APPLICATION_ID,
+ RESPONSIBILITY_ID,
+ RESPONSIBILITY_KEY,
+ END_DATE,
+ RESPONSIBILITY_NAME,
+ DESCRIPTION
+ FROM FND_RESPONSIBILITY_VL;
+-- 用户责任关系
+SELECT USER_ID, RESPONSIBILITY_ID FROM FND_USER_RESP_GROUPS;
+-- 用户表
+SELECT USER_ID, USER_NAME, EMPLOYEE_ID, PERSON_PARTY_ID, END_DATE
+ FROM FND_USER;
+-- 人员表 VIEW
+ SELECT PERSON_ID,
+ START_DATE,
+ DATE_OF_BIRTH,
+ EMPLOYEE_NUMBER,
+ NATIONAL_IDENTIFIER,
+ SEX,
+ FULL_NAME
+ FROM per_people_f;
+-- 综合查询
+SELECT USER_NAME, FULL_NAME, RESPONSIBILITY_NAME, CC.DESCRIPTION
+ FROM FND_USER AA,
+ FND_USER_RESP_GROUPS BB,
+ FND_RESPONSIBILITY_VL CC,
+ per_people_f DD
+ WHERE AA.USER_ID = BB.USER_ID
+ AND BB.RESPONSIBILITY_ID = CC.RESPONSIBILITY_ID
+ AND AA.EMPLOYEE_ID = DD.PERSON_ID
+ AND RESPONSIBILITY_NAME like '% 供应处 %'
+ORDER BY USER_NAME;
+-- 综合查询
+-- 人员状况基本信息表
+SELECT PAF.PERSON_ID 系统 ID,
+ PAF.FULL_NAME 姓名 ,
+PAF.DATE_OF_BIRTH 出生日期 ,
+PAF.REGION_OF_BIRTH 出生地区 ,
+PAF.NATIONAL_IDENTIFIER 身份证号 ,
+PAF.ATTRIBUTE1 招工来源 ,
+PAF.ATTRIBUTE3 员工类型 ,
+PAF.ATTRIBUTE11 集团合同号 ,
+PAF.original_date_of_hire 参加工作日期 ,
+PAF.PER_INFORMATION17 省份 ,
+DECODE (PAF.SEX, 'M' , ' 男 ' , 'F' , ' 女 ' , 'NULL' ) 性别 , --decode 适合和同一值做比较有多种结果，不适合和多种值比较有多种结果
+CASE PAF.SEX
+ WHEN 'M' THEN ' 男 '
+WHEN 'F' THEN ' 女 '
+ELSE 'NULL'
+ END 性别 1, --case 用法一
+CASE WHEN TO_CHAR(PAF.DATE_OF_BIRTH, 'YYYY' ) < '1960' THEN '50 年代 '
+WHEN TO_CHAR(PAF.DATE_OF_BIRTH, 'YYYY' ) < '1970' THEN '60 年代 '
+WHEN TO_CHAR(PAF.DATE_OF_BIRTH, 'YYYY' ) < '1980' THEN '70 年代 '
+WHEN TO_CHAR(PAF.DATE_OF_BIRTH, 'YYYY' ) < '1990' THEN '80 年代 '
+WHEN TO_CHAR(PAF.DATE_OF_BIRTH, 'YYYY' ) < '2000' THEN '90 年代 '
+ELSE '21 世纪 ' --case 用法二
+END 出生年代
+FROM PER_ALL_PEOPLE_F PAF
+  
+  
+ 
+ 3. 供应商 VENDOR
+-- 供应商主表数据：
+SELECT ass.vendor_id vendor_id,
+ ass.party_id party_id,
+ ass.segment1 vendor_code,
+ ass.vendor_name vendor_name,
+ ass.vendor_name vendor_short_name,
+ ass.vendor_type_lookup_code vendor_type,
+ flv.meaning vendor_type_meaning,
+ hp.tax_reference tax_registered_name,
+ ass.payment_method_lookup_code payment_method,
+ att.name term_name,
+ att.enabled_flag enabled_flag,
+ att.end_date_active end_date_active,
+ ass.creation_date creation_date,
+ ass.created_by created_by,
+ ass.last_update_date last_update_date,
+ ass.last_updated_by last_updated_by,
+ ass.last_update_login last_update_login
+ FROM ap_suppliers ass,
+ fnd_lookup_values flv,
+ hz_parties hp,
+ ap_terms_tl att
+ WHERE ass.vendor_type_lookup_code = flv.lookup_code(+)
+ AND flv.lookup_type(+) = 'VENDOR TYPE'
+ AND flv.language(+) = userenv ( 'LANG' )
+ AND ass.party_id = hp.party_id
+ AND att.language = userenv ( 'LANG' )
+ AND ass.terms_id = att.term_id(+)
+-- 供应商银行信息
+SELECT ass.vendor_id vendor_id,
+ ass.party_id party_id,
+ bank.party_id bank_id,
+ bank.party_name bank_name,
+ branch.party_id branch_id,
+ branch.party_name bank_branch_name,
+ ieba.bank_account_num bank_account_num
+ FROM ap_suppliers ass,
+ hz_parties hp,
+ iby_account_owners iao,
+ iby_ext_bank_accounts ieba,
+ hz_parties bank,
+ hz_parties branch
+ WHERE ass.party_id = hp.party_id
+ AND hp.party_id = iao.account_owner_party_id(+)
+ AND iao.ext_bank_account_id = ieba.ext_bank_account_id(+)
+ AND ieba.bank_id = bank.party_id(+)
+ AND ieba.branch_id = branch.party_id(+)
+ ORDER BY ieba.creation_date;
+-- 供应商开户行地址信息
+SELECT hps.party_id party_id,
+ hps.party_site_id party_site_id,
+ hl.location_id location_id,
+ hl.country country,
+ hl.province province,
+ hl.city city,
+ hl.address1 address1,
+ hl.address2 address2,
+ hl.address3 address3,
+ hl.address4 address4
+ FROM hz_party_sites hps, hz_locations hl
+ WHERE hps.location_id = hl.location_id
+ ORDER BY hps.creation_date
+-- 供应商联系人信息
+SELECT hr.subject_id subject_id,
+ hr.object_id object_id,
+ hr.party_id party_id,
+ hp.person_last_name || ' ' || hp.person_middle_name || ' ' ||
+ hp.person_first_name contact_person,
+ hcpp.phone_area_code phone_area_code,
+ hcpp.phone_number phone_number,
+ hcpp.phone_extension phone_extension,
+ hcpf.phone_area_code fax_phone_area_code,
+ hcpf.phone_number fax_phone_number,
+ hcpe.email_address email_address
+ FROM hz_relationships hr,
+ hz_contact_points hcpp,
+ hz_contact_points hcpf,
+ hz_contact_points hcpe,
+ hz_parties hp
+ WHERE hr.object_id = hp.party_id
+ AND hcpp.owner_table_id(+) = hr.party_id
+ AND hcpf.owner_table_id(+) = hr.party_id
+ AND hcpe.owner_table_id(+) = hr.party_id
+ AND hr.object_type = 'PERSON'
+ AND hr.relationship_code(+) = 'CONTACT'
+ AND hcpp.owner_table_name(+) = 'HZ_PARTIES'
+ AND hcpf.owner_table_name(+) = 'HZ_PARTIES'
+ AND hcpe.owner_table_name(+) = 'HZ_PARTIES'
+ AND hcpp.contact_point_type(+) = 'PHONE'
+ AND hcpp.phone_line_type(+) = 'GEN'
+ AND hcpf.contact_point_type(+) = 'PHONE'
+ AND hcpf.phone_line_type(+) = 'FAX'
+ AND hcpe.contact_point_type(+) = 'EMAIL'
+ AND hcpe.phone_line_type IS NULL
+ ORDER BY hr.creation_date;
+-- 供应商地址主信息
+SELECT assa.vendor_site_id vendor_site_id,
+ assa.vendor_id vendor_id,
+ assa.vendor_site_code vendor_code,
+ assa.vendor_site_code address_short_name,
+ assa.address_line1 address_line1,
+ assa.address_line2 address_line2,
+ assa.address_line3 address_line3,
+ assa.address_line4 address_line4,
+ assa.org_id org_id,
+ assa.country country,
+ assa.province province,
+ assa.city city,
+ assa.county county,
+ assa.zip zip,
+ assa.pay_site_flag pay_site_flag,
+ assa.purchasing_site_flag purchasing_site_flag,
+ assa.inactive_date inactive_date,
+ assa.creation_date creation_date,
+ assa.created_by created_by,
+ assa.last_update_date last_update_date,
+ assa.last_updated_by last_updated_by,
+ assa.last_update_login last_update_login
+ FROM ap_suppliers ass, ap_supplier_sites_all assa
+ WHERE assa.vendor_id = ass.vendor_id;
+-- 供应商地址联系人信息： phone 、 fax 和 Email
+ SELECT hcpp.phone_area_code phone_area_code,
+ hcpp.phone_number phone_number,
+ hcpp.phone_extension phone_extension,
+ hcpf.phone_area_code fax_phone_area_code,
+ hcpf.phone_number fax_phone_number,
+ hcpe.email_address email_address
+ FROM ap_supplier_sites_all assa,
+ hz_contact_points hcpp,
+ hz_contact_points hcpf,
+ hz_contact_points hcpe,
+ hz_party_sites hps
+ WHERE assa.party_site_id = hps.party_site_id
+ AND hcpp.owner_table_id(+) = assa.party_site_id
+ AND hcpf.owner_table_id(+) = assa.party_site_id
+ AND hcpe.owner_table_id(+) = assa.party_site_id
+ AND hcpp.owner_table_name(+) = 'HZ_PARTY_SITES'
+ AND hcpf.owner_table_name(+) = 'HZ_PARTY_SITES'
+ AND hcpe.owner_table_name(+) = 'HZ_PARTY_SITES'
+ AND hcpp.contact_point_type(+) = 'PHONE'
+ AND hcpp.phone_line_type(+) = 'GEN'
+ AND hcpf.contact_point_type(+) = 'PHONE'
+ AND hcpf.phone_line_type(+) = 'FAX'
+ AND hcpe.contact_point_type(+) = 'EMAIL'
+ AND hcpe.phone_line_type IS NULL ;
+-- 供应商地址收件人信息
+SELECT assa.party_site_id
+ FROM ap_supplier_sites_all assa
+-- 根据 party_site_id 得到供应商地址的收件人名称
+SELECT hps.addressee FROM hz_party_sites hps;
+-- 供应商银行帐户分配层次关系
+SELECT * FROM iby_pmt_instr_uses_all;
+-- 供应商银行帐户分配层次关系明细 ( 不包括供应商层的分配信息 ):
+SELECT * FROM iby_external_payees_all;
+ 
+ 4. 客户 CUSTOMER
+--SQL 查询
+-- 客户账户表 以许继 1063 电网客户为例 -->>PARTY_ID = 21302
+ SELECT * FROM hz_cust_accounts AA WHERE AA.CUST_ACCOUNT_ID = 1063 ;
+  
+-- 客户名称及地址全局信息表 -->> PARTY_NUMBER = 19316
+ SELECT * FROM hz_parties AA WHERE AA.PARTY_ID = 21302 ;
+  
+-- 客户地点账户主文件
+SELECT * FROM hz_cust_acct_sites_all WHERE CUST_ACCOUNT_ID = 1063 ;
+  
+-- 客户地点 ( 关联 hz_cust_acct_sites_all)
+ SELECT * FROM HZ_PARTY_SITES WHERE PARTY_ID = 21302 ;
+  
+-- 地点地址名称 ( 关联 hz_cust_acct_sites_all)
+ SELECT AA.ADDRESS1, AA.ADDRESS_KEY
+ FROM HZ_LOCATIONS AA, HZ_PARTY_SITES BB
+ WHERE AA.LOCATION_ID = BB.LOCATION_ID
+ AND BB.PARTY_ID = 21302 ;
+  
+-- 客户地点业务目的 ( 关联 hz_cust_acct_sites_all 用 CUST_ACCT_SITE_ID)
+ SELECT * FROM HZ_CUST_SITE_USES_ALL;
+  
+-- 客户地点详细信息表，以供应处 OU 的身份 ORG_ID = 119
+ SELECT AA.PARTY_SITE_ID 客户组织地点 ID,
+ AA.PARTY_ID 客户组织 ID,
+ AA.LOCATION_ID 地点 ID,
+ AA.PARTY_SITE_NUMBER 地点编号 ,
+AA.IDENTIFYING_ADDRESS_FLAG 地址标示 ,
+AA.STATUS 有效否 ,
+AA.PARTY_SITE_NAME,
+ BB.ORG_ID 业务实体 ,
+BB.bill_to_flag 收单标示 ,
+BB.ship_to_flag 收货标示 ,
+CC.ADDRESS1 地点名称 ,
+DD.SITE_USE_ID,
+ DD.SITE_USE_CODE,
+ DD.PRIMARY_FLAG,
+ DD.STATUS,
+ DD.LOCATION 业务目的 ,
+DD.BILL_TO_SITE_USE_ID 收单地 ID,
+ DD.TAX_CODE
+ FROM hz_party_sites AA,
+ hz_cust_acct_sites_all BB,
+ hz_locations CC,
+ HZ_CUST_SITE_USES_ALL DD
+ WHERE AA.PARTY_SITE_ID = BB.PARTY_SITE_ID
+ AND BB.CUST_ACCOUNT_ID = 1063
+ AND BB.ORG_ID = 119
+ AND AA.STATUS = 'A'
+ AND AA.LOCATION_ID = CC.LOCATION_ID
+ AND BB.CUST_ACCT_SITE_ID(+) = DD.CUST_ACCT_SITE_ID
+ AND DD.STATUS <> 'I' ;
+  
+--************* 综合查询 ************--
+ -- 客户主数据
+SELECT hca.cust_account_id customer_id,
+ hp.party_number customer_number,
+ hp.party_name customer_name,
+ hp.party_name customer_short_name,
+ hca.customer_type customer_type,
+ alt.meaning customer_type_meaning,
+ hca.customer_class_code customer_class,
+ alc.meaning customer_class_meaning,
+ hp.tax_reference tax_registered_name,
+ rt.name term_name,
+ hca.creation_date creation_date,
+ hca.created_by created_by,
+ hca.last_update_date last_update_date,
+ hca.last_updated_by last_updated_by,
+ hca.last_update_login last_update_login
+ FROM hz_parties hp,
+ hz_cust_accounts hca,
+ ar_lookups alt,
+ ar_lookups alc,
+ hz_customer_profiles hcp,
+ ra_terms rt
+ WHERE hp.party_id = hca.party_id
+ AND hca.customer_type = alt.lookup_code(+)
+ AND alt.lookup_type = 'CUSTOMER_TYPE'
+ AND hca.customer_class_code = alc.lookup_code(+)
+ AND alc.lookup_type(+) = 'CUSTOMER CLASS'
+ AND hca.cust_account_id = hcp.cust_account_id(+)
+ AND hcp.standard_terms = rt.term_id(+)
+  
+-- 客户收款方法 SQL
+ SELECT arm.name receipt_method_name
+ FROM hz_cust_accounts hca,
+ ra_cust_receipt_methods rcrm,
+ ar_receipt_methods arm
+ WHERE hca.cust_account_id = rcrm.customer_id
+ AND rcrm.receipt_method_id = arm.receipt_method_id
+ ORDER BY rcrm.creation_date;
+-- 客户账户层银行账户信息 SQL
+ SELECT hca.cust_account_id cust_account_id,
+ hp.party_id party_id,
+ bank.party_id bank_id,
+ bank.party_name bank_name,
+ branch.party_id branch_id,
+ branch.party_name bank_branch_name,
+ ieba.bank_account_num bank_account_num
+ FROM hz_cust_accounts hca,
+ hz_parties hp,
+ iby_account_owners iao,
+ iby_ext_bank_accounts ieba,
+ hz_parties bank,
+ hz_parties branch
+ WHERE hca.party_id = hp.party_id
+ AND hp.party_id = iao.account_owner_party_id(+)
+ AND iao.ext_bank_account_id = ieba.ext_bank_account_id(+)
+ AND ieba.bank_id = bank.party_id(+)
+ AND ieba.branch_id = branch.party_id(+)
+ ORDER BY ieba.creation_date;
+-- 客户开户行地址信息 SQL
+ SELECT hl.country || '-' || hl.province || '-' || hl.city || '-' ||
+ hl.address1 || '-' || hl.address2 || '-' || hl.address3 || '-' ||
+ hl.address4 bank_address
+ FROM hz_party_sites hps, hz_locations hl
+ WHERE hps.location_id = hl.location_id
+ ORDER BY hps.creation_date;
+-- 客户账户层联系人信息：联系人、电话、手机和 Email SQL
+ SELECT hr.party_id party_id,
+ hcar.cust_account_id cust_account_id,
+ hcar.cust_acct_site_id cust_acct_site_id,
+ hp.person_last_name || ' ' || hp.person_middle_name || ' ' ||
+ hp.person_first_name contact_person,
+ hcpp.phone_area_code phone_area_code,
+ hcpp.phone_number phone_number,
+ hcpp.phone_extension phone_extension,
+ hcpm.phone_area_code mobile_phone_area_code,
+ hcpm.phone_number mobile_phone_number,
+ hcpe.email_address email_address
+ FROM hz_relationships hr,
+ hz_cust_account_roles hcar,
+ hz_org_contacts hoc,
+ hz_contact_points hcpp,
+ hz_contact_points hcpm,
+ hz_contact_points hcpe,
+ hz_parties hp,
+ hz_cust_accounts hca
+ WHERE hr.object_id = hp.party_id
+ AND hr.party_id = hcar.party_id
+ AND hr.relationship_id = hoc.party_relationship_id(+)
+ AND hcpp.owner_table_id(+) = hr.party_id
+ AND hcpm.owner_table_id(+) = hr.party_id
+ AND hcpe.owner_table_id(+) = hr.party_id
+ AND hr.object_type = 'PERSON'
+ AND hr.relationship_code(+) = 'CONTACT'
+ AND hcpp.owner_table_name(+) = 'HZ_PARTIES'
+ AND hcpm.owner_table_name(+) = 'HZ_PARTIES'
+ AND hcpe.owner_table_name(+) = 'HZ_PARTIES'
+ AND hcpp.contact_point_type(+) = 'PHONE'
+ AND hcpp.phone_line_type(+) = 'GEN'
+ AND hcpm.contact_point_type(+) = 'PHONE'
+ AND hcpm.phone_line_type(+) = 'MOBILE'
+ AND hcpe.contact_point_type(+) = 'EMAIL'
+ AND hcpe.phone_line_type IS NULL
+ AND hr.subject_id = hca.party_id
+ AND hcar.cust_acct_site_id IS NULL
+ ORDER BY hr.creation_date;
+-- 客户地址
+SELECT hcasa.cust_acct_site_id customer_site_id,
+ hcasa.cust_account_id customer_id,
+ hps.party_site_number customer_site_code,
+ hps.party_site_name customer_site_name,
+ hl.address1 address_line1,
+ hl.address2 address_line2,
+ hl.address3 address_line3,
+ hl.address4 address_line4,
+ hcasa.org_id org_id,
+ hl.country country,
+ hl.province province,
+ hl.city city,
+ hl.county county,
+ hl.postal_code zip,
+ hcasa.bill_to_flag bill_to_flag,
+ hcasa.ship_to_flag ship_to_flag,
+ hca.creation_date creation_date,
+ hca.created_by created_by,
+ hca.last_update_date last_update_date,
+ hca.last_updated_by last_updated_by,
+ hca.last_update_login last_update_login
+ FROM hz_cust_accounts hca,
+ hz_cust_acct_sites_all hcasa,
+ hz_party_sites hps,
+ hz_locations hl
+ WHERE hca.cust_account_id = hcasa.cust_account_id
+ AND hcasa.party_site_id = hps.party_site_id
+ AND hps.location_id = hl.location_id;
+  
+-- 客户账户层地址 contact person 信息 :phone,mobile,email
+ SELECT hr.party_id party_id,
+ hcar.cust_account_id cust_account_id,
+ hcar.cust_acct_site_id cust_acct_site_id,
+ hp.person_last_name || ' ' || hp.person_middle_name || ' ' ||
+ hp.person_first_name contact_person,
+ hcpp.phone_area_code phone_area_code,
+ hcpp.phone_number phone_number,
+ hcpp.phone_extension phone_extension,
+ hcpm.phone_area_code mobile_phone_area_code,
+ hcpm.phone_number mobile_phone_number,
+ hcpe.email_address email_address
+ FROM hz_relationships hr,
+ hz_cust_account_roles hcar,
+ hz_org_contacts hoc,
+ hz_contact_points hcpp,
+ hz_contact_points hcpm,
+ hz_contact_points hcpe,
+ hz_parties hp,
+ hz_cust_accounts hca
+ WHERE hr.object_id = hp.party_id
+ AND hr.party_id = hcar.party_id
+ AND hr.relationship_id = hoc.party_relationship_id(+)
+ AND hcpp.owner_table_id(+) = hr.party_id
+ AND hcpm.owner_table_id(+) = hr.party_id
+ AND hcpe.owner_table_id(+) = hr.party_id
+ AND hr.object_type = 'PERSON'
+ AND hr.relationship_code(+) = 'CONTACT'
+ AND hcpp.owner_table_name(+) = 'HZ_PARTIES'
+ AND hcpm.owner_table_name(+) = 'HZ_PARTIES'
+ AND hcpe.owner_table_name(+) = 'HZ_PARTIES'
+ AND hcpp.contact_point_type(+) = 'PHONE'
+ AND hcpp.phone_line_type(+) = 'GEN'
+ AND hcpm.contact_point_type(+) = 'PHONE'
+ AND hcpm.phone_line_type(+) = 'MOBILE'
+ AND hcpe.contact_point_type(+) = 'EMAIL'
+ AND hcpe.phone_line_type IS NULL
+ AND hr.subject_id = hca.party_id
+ AND hca.cust_account_id = hcar.cust_account_id
+ ORDER BY hr.creation_date;
+  
+-- 客户账户地点地址
+SELECT hp.party_id,
+ hca.cust_account_id,
+ hcasa.cust_acct_site_id,
+ hcasa.bill_to_flag,
+ hcasa.ship_to_flag,
+ hcsua.site_use_id,
+ hcasa.party_site_id,
+ hcsua.site_use_code,
+ hcsua.primary_flag,
+ hcsua.location,
+ hcsua.org_id
+ FROM hz_parties hp,
+ hz_cust_accounts hca,
+ hz_party_sites hps,
+ hz_cust_acct_sites_all hcasa,
+ hz_cust_site_uses_all hcsua
+ WHERE hp.party_id = hca.party_id
+ AND hca.cust_account_id = hcasa.cust_account_id
+ AND hcasa.party_site_id = hps.party_site_id
+ AND hcsua.cust_acct_site_id = hcasa.cust_acct_site_id
+-- 客户主配置文件
+SELECT * FROM hz_cust_profile_classes;
+ SELECT * FROM hz_customer_profiles;
+ SELECT * FROM hz_cust_prof_class_amts;
+ SELECT * FROM hz_cust_profile_amts;
+ 
+ 5. 订单 OE
+--
+ select * from oe_order_headers_all 销售头
+select * from oe_order_lines_all 销售行
+select * from wsh_new_deliveries 发送
+select * from wsh_delivery_details
+ select * from wsh_delivery_assignments
+-- 综合查询 1- 未结销售订单
+SELECT H.ORDER_NUMBER 销售订单 ,
+h.cust_po_number 客户 PO,
+ cust.account_number 客户编码 ,
+hp.party_name 客户名称 ,
+ship_use.location 收货地 ,
+bill_use.location 收单地 ,
+h.ordered_date 订单日期 ,
+H.ATTRIBUTE1 合同号 ,
+h.attribute2 屏号 ,
+h.attribute3 来源编码 ,
+l.line_number 行号 ,
+l.ordered_item 物料 ,
+msi.description 物料说明 ,
+l.order_quantity_uom 订购单位 ,
+l.ordered_quantity 订购数量 ,
+l.cancelled_quantity 取消数量 ,
+l.shipped_quantity 发运数量 ,
+l.schedule_ship_date 计划发运日期 ,
+l.booked_flag 登记标记 ,
+ol.MEANING 工作流状态 ,
+l.cancelled_flag 取消标记
+FROM OE_ORDER_HEADERS_ALL H,
+ OE_ORDER_LINES_ALL L,
+ HZ_CUST_ACCOUNTS CUST,
+ hz_parties hp,
+ hz_cust_site_uses_all ship_use,
+ hz_cust_site_uses_all bill_use,
+ mtl_system_items_b msi,
+ oe_lookups ol
+ WHERE 1 = 1
+ AND H.HEADER_ID = L.HEADER_ID
+ AND H.SOLD_TO_ORG_ID = CUST.CUST_ACCOUNT_ID
+ and cust.party_id = hp.party_id
+ and h.ship_to_org_id = ship_use.site_use_id
+ and h.invoice_to_org_id = bill_use.site_use_id
+ and l.flow_status_code not in ( 'CLOSED' , 'CANCELLED' )
+ and l.inventory_item_id = msi.inventory_item_id
+ and msi.organization_id = 141
+ and l.flow_status_code = ol.LOOKUP_CODE
+ and ol.LOOKUP_TYPE = 'LINE_FLOW_STATUS'
+ AND CUST.ACCOUNT_NUMBER IN ( '91010072' , '91010067' , '91010036' )
+ order by party_name ，收货地，销售订单 ;
+
+
+6. 采购申请 PR
+-- 申请单头 （以电网组织 ORG_ID=112 内部申请 =14140002781 为例
+SELECT PRH.REQUISITION_HEADER_ID 申请单头 ID,
+ PRH.PREPARER_ID,
+ PRH.Org_Id OU_ID,
+ PRH.SEGMENT1 申请单编号 ,
+PRH.Creation_Date 创建日期 ,
+PRH.Created_By 编制人 ID,
+ FU.USER_NAME 用户名称 ,
+PP.FULL_NAME 用户姓名 ,
+PRH.Approved_Date 批准日期 ,
+PRH.Description 说明 ,
+PRH.Authorization_Status 状态 ,
+PRH.Type_Lookup_Code 类型 ,
+PRH.Transferred_To_Oe_Flag 传递标示
+FROM PO_REQUISITION_HEADERS_ALL PRH, FND_USER FU, per_people_f PP
+ WHERE PRH.CREATED_BY = FU.USER_ID
+ AND FU.EMPLOYEE_ID = PP.PERSON_ID
+ AND PRH.ORG_ID = 112
+ AND PRH.SEGMENT1 = '14140002781' ;
+ -->> 内部申请 =14140002781 申请单头 ID = 3379
+-- 申请单行明细
+SELECT PRL.REQUISITION_HEADER_ID 申请单 ID,
+ PRL.REQUISITION_LINE_ID 行 ID,
+ PRL.LINE_NUM 行号 ,
+PRL.CATEGORY_ID 分类 ID,
+ PRL.ITEM_ID 物料 ID,
+ ITEM.SEGMENT1 物料编码 ,
+PRL.ITEM_DESCRIPTION 物料说明 ,
+PRL.Quantity 需求数 ,
+PRL.Quantity_Delivered 送货数 ,
+PRL.Quantity_Cancelled 取消数 ,
+PRL.Unit_Meas_Lookup_Code 单位 ,
+PRL.Unit_Price 参考价 ,
+PRL.Need_By_Date 需求日期 ,
+PRL.Source_Type_Code 来源类型 ,
+PRL.Org_Id OU_ID,
+ PRL.Source_Organization_Id 对方组织 ID,
+ PRL.Destination_Organization_Id 本方组织 ID
+ from PO_REQUISITION_LINES_ALL PRL,MTL_SYSTEM_ITEMS ITEM
+ WHERE PRL.ORG_ID = 112
+ AND PRL.ITEM_ID = ITEM.INVENTORY_ITEM_ID
+ AND PRL.Destination_Organization_Id = ITEM.ORGANIZATION_ID
+ AND PRL.REQUISITION_HEADER_ID = 3379 ;
+-- 申请单头 ( 加对方订单编号 )
+SELECT PRH.REQUISITION_HEADER_ID 申请单头 ID,
+ PRH.PREPARER_ID,
+ PRH.Org_Id OU_ID,
+ PRH.SEGMENT1 申请单编号 ,
+PRH.Creation_Date 创建日期 ,
+PRH.Created_By 编制人 ID,
+ FU.USER_NAME 用户名称 ,
+PP.FULL_NAME 用户姓名 ,
+PRH.Approved_Date 批准日期 ,
+PRH.Description 说明 ,
+PRH.Authorization_Status 状态 ,
+PRH.Type_Lookup_Code 类型 ,
+PRH.Transferred_To_Oe_Flag 传递标示 ,
+OEH.ORDER_NUMBER 对方 CO 编号
+FROM PO_REQUISITION_HEADERS_ALL PRH, FND_USER FU, per_people_f PP,OE_ORDER_HEADERS_ALL OEH
+ WHERE PRH.CREATED_BY = FU.USER_ID
+ AND FU.EMPLOYEE_ID = PP.PERSON_ID
+ AND PRH.REQUISITION_HEADER_ID = OEH.SOURCE_DOCUMENT_ID(+)
+ AND PRH.ORG_ID = 112
+ AND PRH.SEGMENT1 = '14140002781' ;
+--( 销售订单记录有对方 OU_ID, 申请单关键字 SOURCE_DOCUMENT_ID 申请单号 SOURCE_DOCEMENT_REF)
+  
+ ******************* 综合查询类 *******************
+-- 申请单头综合查询 （进限制只能查询 -- 电网组织 ORG_ID=112)
+ SELECT PRH.REQUISITION_HEADER_ID 申请单头 ID,
+ PRH.Org_Id 组织 ID,
+ PRH.SEGMENT1 申请单编号 ,
+PRH.Creation_Date 创建日期 ,
+PRH.Created_By 编制人 ID,
+ FU.USER_NAME 用户名称 ,
+PP.FULL_NAME 用户姓名 ,
+PRH.Approved_Date 批准日期 ,
+PRH.Description 说明 ,
+PRH.Authorization_Status 状态 ,
+PRH.Type_Lookup_Code 类型 ,
+PRH.Transferred_To_Oe_Flag 传递标示 ,
+PRL.REQUISITION_LINE_ID 行 ID,
+ PRL.LINE_NUM 行号 ,
+PRL.CATEGORY_ID 分类 ID,
+ PRL.ITEM_ID 物料 ID,
+ ITEM.SEGMENT1 物料编码 ,
+PRL.ITEM_DESCRIPTION 物料说明 ,
+PRL.Quantity 需求数 ,
+PRL.Quantity_Delivered 送货数 ,
+PRL.Quantity_Cancelled 取消数 ,
+PRL.Unit_Meas_Lookup_Code 单位 ,
+PRL.Unit_Price 参考价 ,
+PRL.Need_By_Date 需求日期 ,
+PRL.Source_Type_Code 来源类型 ,
+PRL.Source_Organization_Id 对方组织 ID,
+ PRL.Destination_Organization_Id 本方组织 ID
+ FROM PO_REQUISITION_HEADERS_ALL PRH,
+ FND_USER FU,
+ per_people_f PP,
+ PO_REQUISITION_LINES_ALL PRL,
+ MTL_SYSTEM_ITEMS ITEM
+ WHERE PRH.CREATED_BY = FU.USER_ID
+ AND FU.EMPLOYEE_ID = PP.PERSON_ID
+ AND PRH.REQUISITION_HEADER_ID = PRL.REQUISITION_HEADER_ID
+ AND PRH.Org_Id = PRL.ORG_ID
+ AND PRL.ITEM_ID = ITEM.INVENTORY_ITEM_ID
+ AND PRL.Destination_Organization_Id = ITEM.ORGANIZATION_ID
+ AND PRH.ORG_ID = 112 ;
+  
+-- 若需创建视图只需在 SELECT 语句前加上
+CREATE OR REPLACE VIEW CUX_INV_PR112 AS
+ 7. 采购订单 PO
+-- 采购单头信息 TYPE_LOOKUP_CODE='STANDARD' （以供应处 OU ORG_ID=119 采购单 ='' 为例）
+-- 类型说明 TYPE_LOOKUP_CODE='STANDARD' 为采购单 TYPE_LOOKUP_CODE='BLANKET' 为采购协议
+SELECT POH.ORG_ID OU_ID,
+ POH.PO_HEADER_ID 采购单头 ID,
+ POH.TYPE_LOOKUP_CODE 类型 ,
+POH.AUTHORIZATION_STATUS 状态 ,
+POH.VENDOR_ID 供应商 ID,
+ VENDOR.VENDOR_NAME 供应商名 ,
+POH.VENDOR_SITE_ID 供应商地址 ID,
+ POH.VENDOR_CONTACT_ID 供应商联系人 ID,
+ POH.SHIP_TO_LOCATION_ID 本方收货地 ID,
+ POH.BILL_TO_LOCATION_ID 本方收单地 ID,
+ POH.CREATION_DATE 创建日期 ,
+POH.APPROVED_FLAG 审批 YN,
+ POH.APPROVED_DATE 审批日期 ,
+POH.COMMENTS 采购单说明 ,
+POH.TERMS_ID 条款 ID,
+ POH.AGENT_ID 采购员 ID,
+ AGT_PP.LAST_NAME 采购员 ,
+POH.CREATED_BY 创建者 ID,
+ FU.USER_NAME 创建用户 ,
+PP.FULL_NAME 用户姓名
+FROM PO_HEADERS_ALL POH, FND_USER FU, per_people_f PP,PER_ALL_PEOPLE_F AGT_PP,ap_suppliers VENDOR
+ WHERE POH.CREATED_BY = FU.USER_ID
+ AND FU.EMPLOYEE_ID = PP.PERSON_ID
+ AND POH.AGENT_ID = AGT_PP.PERSON_ID
+ AND POH.VENDOR_ID=VENDOR.VENDOR_ID
+ AND POH.ORG_ID = 119
+ AND POH.TYPE_LOOKUP_CODE = 'STANDARD'
+ AND POH.SEGMENT1 = '14730005436' ;
+ /*
+ FND_USER FU, per_people_f PP 用户相关表
+po_agents_name_v 采购员视图 ----> PO_AGENTS.AGENT_ID = PER_ALL_PEOPLE_F.PERSON_ID 采购员相关表
+ap_suppliers 供应商主表
+*/
+  
+-->> POH.SEGMENT1 = '14730005436' PO_HEADER_ID = 10068
+-- 采购单行信息
+SELECT POL.ORG_ID OU_ID,
+ POL.PO_HEADER_ID 采购单头 ID,
+ POL.PO_LINE_ID 行 ID,
+ POL.LINE_NUM 行号 ,
+POL.ITEM_ID 物料 ID,
+ ITEM.SEGMENT1 物料编码 ,
+POL.ITEM_DESCRIPTION 物料说明 ,
+POL.UNIT_MEAS_LOOKUP_CODE 单位 ,
+POL.UNIT_PRICE 单价 ,
+PO_LCT.QUANTITY 订购数 ,
+PO_LCT.QUANTITY_RECEIVED 验收数 ,
+PO_LCT.QUANTITY_ACCEPTED 接收数 ,
+PO_LCT.QUANTITY_REJECTED 拒绝数 ,
+PO_LCT.QUANTITY_CANCELLED 取消数 ,
+PO_LCT.QUANTITY_BILLED 到票数 ,
+PO_LCT.PROMISED_DATE 承诺日期 ,
+PO_LCT.NEED_BY_DATE 需求日期
+FROM PO_LINES_ALL POL,
+ Po_Line_Locations_all PO_LCT,
+ MTL_SYSTEM_ITEMS ITEM
+ WHERE POL.ORG_ID = PO_LCT.ORG_ID
+ AND POL.PO_LINE_ID = PO_LCT.PO_LINE_ID
+ AND POL.ITEM_ID = ITEM.INVENTORY_ITEM_ID
+ AND ITEM.ORGANIZATION_ID = 142
+ AND POL.Org_Id = 119
+ AND POL.PO_HEADER_ID = 10068 ;
+-- 说明： Po_Line_Locations_all 系 “ 发运表 ”
+ 
+-- 综合查询 1 ，所分配给供应处组织的物料，存在采购协议，但缺失采购员或缺失仓库；
+select MSIF.Segment1 物料编码 ,
+MSIF.Description 物料描述 ,
+MSIF.LONG_DESCRIPTION 物料详细描述 ,
+--MSIF.primary_unit_of_measure 计量单位 ,
+PRF.LAST_NAME 采购员 ,
+MISD.subinventory_code 默认接收库存 ,
+PLA.unit_price 未税价 ,
+round (PLA.unit_price * ( 1 + ZRB.percentage_rate / 100 ), 2 ) 含税价 ,
+PV.VENDOR_NAME 供应商名称
+from apps.PO_HEADERS_ALL PHA,
+ apps.PO_LINES_ALL PLA,
+ apps.MTL_SYSTEM_ITEMS_FVL MSIF,
+ apps.MTL_ITEM_SUB_DEFAULTS MISD,
+ apps.PER_PEOPLE_F PRF,
+ apps.PO_VENDORS PV,
+ apps.PO_VENDOR_SITES_ALL PVSA,
+ apps.ZX_RATES_B ZRB
+ where PHA.Type_Lookup_Code = 'BLANKET' and PHA.Org_Id = 119 and
+ PHA.PO_HEADER_ID = PLA.Po_Header_Id and
+ PHA.Global_Agreement_Flag = 'Y' and PHA.Approved_Flag in ( 'Y' , 'R' ) and
+ NVL (PHA.end_Date, sysdate ) >= sysdate and
+ NVL (PLA.Expiration_Date, sysdate ) >= sysdate and
+ PLA.Cancel_Flag = 'N' and PLA.Item_Id = MSIF.INVENTORY_ITEM_ID and
+ MSIF.ORGANIZATION_ID = 142 and
+ MSIF.INVENTORY_ITEM_ID = MISD.INVENTORY_ITEM_ID(+) and
+ MISD.ORGANIZATION_ID(+) = 142 and MISD.default_type(+) = 2 and
+ MSIF.BUYER_ID = PRF.PERSON_ID(+) and
+ PRF.EFFECTIVE_END_DATE(+) = to_date( '4712-12-31' , 'YYYY-MM-DD' ) and
+ PHA.VENDOR_ID = PV.VENDOR_ID and
+ PHA.Vendor_Site_Id = PVSA.VENDOR_SITE_ID and
+ PVSA.VAT_CODE = ZRB.tax_rate_code and
+ (MISD.subinventory_code is null or PRF.LAST_NAME is null )
+  
+-- 采购其他相关表
+select * from po_distributions_all 分配
+select * from po_releases_all
+ select * from rcv_shipment_headers 采购接收头
+select * from rcv_shipment_lines 采购接收行
+select * from rcv_transactions 接收事务处理
+select * from po_agents
+ select * from po_vendors
+ select * from po_vendor_sites_all
+  
+8. 库存 INV
+-- 物料主表
+select MSI.ORGANIZATION_ID 组织 ID,
+ MSI.INVENTORY_ITEM_ID 物料 ID,
+ MSI.SEGMENT1 物料编码 ,
+MSI.DESCRIPTION 物料说明 ,
+MSI.ITEM_TYPE 项目类型 ,
+MSI.PLANNING_MAKE_BUY_CODE 制造或购买 ,
+MSI.PRIMARY_UNIT_OF_MEASURE 基本度量单位 ,
+MSI.BOM_ENABLED_FLAG BOM 标志 ,
+MSI.INVENTORY_ASSET_FLAG 库存资产否 ,
+MSI.BUYER_ID 采购员 ID,
+ MSI.PURCHASING_ENABLED_FLAG 可采购否 ,
+MSI.PURCHASING_ITEM_FLAG 采购项目 ,
+MSI.UNIT_OF_ISSUE 单位 ,
+MSI.INVENTORY_ITEM_FLAG 是否为库存 ,
+MSI.LOT_CONTROL_CODE 是否批量 ,
+MSI.RESERVABLE_TYPE 是否要预留 ,
+MSI.STOCK_ENABLED_FLAG 能否库存 ,
+MSI.FIXED_DAYS_SUPPLY 固定提前期 ,
+MSI.FIXED_LOT_MULTIPLIER 固定批量大小 ,
+MSI.INVENTORY_PLANNING_CODE 库存计划方法 ,
+MSI.MAXIMUM_ORDER_QUANTITY 最大定单数 ,
+MSI.MINIMUM_ORDER_QUANTITY 最小定单数 ,
+MSI.FULL_LEAD_TIME 固定提前期 ,
+MSI.PLANNER_CODE 计划员码 ,
+MISD.SUBINVENTORY_CODE 接收子仓库 ,
+MSI.SOURCE_SUBINVENTORY 来源子仓库 ,
+MSI.WIP_SUPPLY_SUBINVENTORY 供应子仓库 ,
+MSI.ATTRIBUTE12 老编码 ,
+MSI.INVENTORY_ITEM_STATUS_CODE 物料状态 ,
+MSS.SAFETY_STOCK_QUANTITY 安全库存量
+from mtl_system_items MSI, MTL_ITEM_SUB_DEFAULTS MISD,mtl_safety_stocks MSS
+ where MSI.ORGANIZATION_ID = MISD.ORGANIZATION_ID(+)
+ and MSI.INVENTORY_ITEM_ID = MISD.INVENTORY_ITEM_ID(+)
+ and MSI.ORGANIZATION_ID = MSS.ORGANIZATION_ID(+)
+ and MSI.INVENTORY_ITEM_ID = MSS.INVENTORY_ITEM_ID(+)
+ and MSI.ORGANIZATION_ID = 1155
+ and MSI.SEGMENT1 = '18020200012'
+-- 物料库存数量
+SELECT MOQ.ORGANIZATION_ID,
+ MOQ.INVENTORY_ITEM_ID,
+ MOQ.SUBINVENTORY_CODE,
+ SUM (MOQ.TRANSACTION_QUANTITY) QTY
+ FROM mtl_onhand_quantities MOQ
+ WHERE MOQ.INVENTORY_ITEM_ID = 12781
+ AND MOQ.ORGANIZATION_ID = 1155
+ GROUP BY MOQ.ORGANIZATION_ID, MOQ.INVENTORY_ITEM_ID, MOQ.SUBINVENTORY_CODE;
+-- 移动平均成本
+SELECT CST.INVENTORY_ITEM_ID ITEM_ID,
+ CST.ORGANIZATION_ID ORG_ID,
+ CST.COST_TYPE_ID 成本类型 ,
+CST.ITEM_COST 单位成本 ,
+CST.MATERIAL_COST 材料成本 ,
+CST.MATERIAL_OVERHEAD_COST 间接费 ,
+CST.Resource_Cost 人工费 ,
+CST.OUTSIDE_PROCESSING_COST 外协费 ,
+CST.OVERHEAD_COST 制造费
+FROM CST_ITEM_COSTS CST
+ WHERE CST.COST_TYPE_ID = 2
+ AND CST.INVENTORY_ITEM_ID = 12781
+ AND CST.ORGANIZATION_ID = 1155 ;
+  
+-- 综合查询 - 库存数量及成本
+SELECT MSI.ORGANIZATION_ID 组织 ID,
+ MSI.INVENTORY_ITEM_ID 物料 ID,
+ MSI.SEGMENT1 物料编码 ,
+MSI.DESCRIPTION 物料说明 ,
+MSI.PLANNING_MAKE_BUY_CODE M1P2,
+ MOQV.SUBINVENTORY_CODE 子库存 ,
+MOQV.QTY 当前库存量 ,
+CST.ITEM_COST 单位成本 ,
+CST.MATERIAL_COST 材料成本 ,
+CST.MATERIAL_OVERHEAD_COST 间接费 ,
+CST.Resource_Cost 人工费 ,
+CST.OUTSIDE_PROCESSING_COST 外协费 ,
+CST.OVERHEAD_COST 制造费
+FROM MTL_SYSTEM_ITEMS MSI,
+ CST_ITEM_COSTS CST,
+ ( SELECT MOQ.ORGANIZATION_ID,
+ MOQ.INVENTORY_ITEM_ID,
+ MOQ.SUBINVENTORY_CODE,
+ SUM (MOQ.TRANSACTION_QUANTITY) QTY
+ FROM mtl_onhand_quantities MOQ
+ WHERE MOQ.ORGANIZATION_ID = 1155
+ GROUP BY MOQ.ORGANIZATION_ID,
+ MOQ.INVENTORY_ITEM_ID,
+ MOQ.SUBINVENTORY_CODE) MOQV
+ WHERE MSI.ORGANIZATION_ID = CST.ORGANIZATION_ID(+)
+ AND MSI.INVENTORY_ITEM_ID = CST.INVENTORY_ITEM_ID(+)
+ AND MSI.ORGANIZATION_ID = MOQV.ORGANIZATION_ID(+)
+ AND MSI.INVENTORY_ITEM_ID = MOQV.INVENTORY_ITEM_ID(+)
+ AND CST.COST_TYPE_ID = 2
+ AND MSI.ORGANIZATION_ID = 1155
+ AND MSI.SEGMENT1 = '18020200012'
+-- 子库存列表
+SELECT * FROM mtl_secondary_inventories;
+-- 货位列表
+SELECT ORGANIZATION_ID 组织代码 ,
+INVENTORY_LOCATION_ID 货位内码 ,
+SUBINVENTORY_CODE 子库名称 ,
+SEGMENT1 货位编码
+FROM mtl_item_locations;
+-- 计划员表
+SELECT PLANNER_CODE 计划员代码 ,
+ORGANIZATION_ID 组织代码 ,
+DESCRIPTION 计划员描述 ,
+MP.EMPLOYEE_ID 员工 ID,
+ DISABLE_DATE 失效日期
+FROM mtl_planners MP;
+-- 科目设置等参数
+select * from MTL_PARAMETERS MP
+ 
+ 9. 物料清单 BOM
+--BOM 主表 bom_bill_of_materials
+ select AA.BILL_SEQUENCE_ID 清单序号 ,
+AA.ASSEMBLY_ITEM_ID 装配件内码 ,
+AA.ORGANIZATION_ID 组织代码 ,
+BB.SEGMENT1 物料编码 ,
+BB.DESCRIPTION 物料说明 ,
+AA.ASSEMBLY_TYPE 装配类别
+from bom_bill_of_materials AA ， mtl_system_items BB
+ where AA.ASSEMBLY_ITEM_ID = BB.INVENTORY_ITEM_ID
+ and AA.ORGANIZATION_ID = BB.ORGANIZATION_ID;
+--BOM 明细表 bom_inventory_components
+ select BILL_SEQUENCE_ID 清单序号 ,
+COMPONENT_SEQUENCE_ID 构件序号 ,
+ITEM_NUM 项目序列 ,
+OPERATION_SEQ_NUM 操作序列号 ,
+COMPONENT_ITEM_ID 子物料内码 ,
+COMPONENT_QUANTITY 构件数量 ,
+DISABLE_DATE 失效日期 ,
+supply_subinventory 供应子库存 ,
+BOM_ITEM_TYPE
+ from bom_inventory_components;
+  
+--BOM 明细综合查询 ( 组织 限定供应处 142 装配件 = '5XJ061988')
+ SELECT VBOM.BID 清单序号 ,
+VBOM.F_ITEMID 装配件内码 ,
+BB.SEGMENT1 物料编码 ,
+BB.DESCRIPTION 物料说明 ,
+VBOM.OGT_ID 组织内码 ,
+VBOM.CID 操作 ID,
+ VBOM.ITEM_NUM 物料序号 ,
+VBOM.OPID 工序 ,
+VBOM.C_ITEMID 子物料内码 ,
+CC.SEGMENT1 物料编码 ,
+CC.DESCRIPTION 物料说明 ,
+VBOM.QTY 构件数量 ,
+CC.PRIMARY_UOM_CODE 子计量单位码 ,
+CC.PRIMARY_UNIT_OF_MEASURE 子计量单位名 ,
+VBOM.WHSE 供应子仓库
+FROM ( select AA.BILL_SEQUENCE_ID BID,
+ BB.ASSEMBLY_ITEM_ID F_ITEMID,
+ BB.ORGANIZATION_ID OGT_ID,
+ AA.COMPONENT_SEQUENCE_ID CID,
+ AA.ITEM_NUM ITEM_NUM,
+ AA.OPERATION_SEQ_NUM OPID,
+ AA.COMPONENT_ITEM_ID C_ITEMID,
+ AA.COMPONENT_QUANTITY QTY,
+ AA.supply_subinventory WHSE
+ from bom_inventory_components AA, bom_bill_of_materials BB
+ where AA.BILL_SEQUENCE_ID = BB.BILL_SEQUENCE_ID) VBOM,
+ mtl_system_items BB,
+ mtl_system_items CC
+ WHERE VBOM.F_ITEMID = BB.INVENTORY_ITEM_ID
+ and VBOM.OGT_ID = BB.ORGANIZATION_ID
+ and VBOM.C_ITEMID = CC.INVENTORY_ITEM_ID
+ and VBOM.OGT_ID = CC.ORGANIZATION_ID
+ and VBOM.OGT_ID = 142
+ and BB.SEGMENT1 = '5XJ061988'
+ ORDER BY VBOM.ITEM_NUM;
+  
+-- 单层 BOM 成本查询 ( 需系统提交请求计算后 )
+select inventory_item_id, organization_id, item_cost, program_update_date
+ from bom.cst_item_costs
+ where inventory_item_id = 23760
+ and organization_id = 142 ;
+  
+ select inventory_item_id, organization_id, item_cost, program_update_date
+ from cst_item_cost_details
+ where inventory_item_id = 23760
+ and organization_id = 142 ;
+ 
+ 10. 作业任务 WIP
+说明： 查询作业任务头以及作业任务工序和 BOM 情况
+-- 作业任务头信息表
+-- （以直流 OU_ID=117 ； ORGANIZATION_ID=1155; 及任务 WIP_ENTITY_NAME='XJ39562'; 装配件编码 SEGMENT1 = '07D9202.92742' 为例）
+SELECT AA.WIP_ENTITY_ID 任务令 ID,
+ AA.ORGANIZATION_ID 组织 ID,
+ AA.WIP_ENTITY_NAME 任务名称 ,
+AA.ENTITY_TYPE 任务类型 ,
+AA.CREATION_DATE 创建日期 ,
+AA.CREATED_BY 创建者 ID,
+ AA.DESCRIPTION 说明 ,
+AA.PRIMARY_ITEM_ID 装配件 ID,
+ BB.SEGMENT1 物料编码 ,
+BB.DESCRIPTION 物料说明
+FROM wip_entities AA, mtl_system_items BB
+ WHERE AA.PRIMARY_ITEM_ID = BB.INVENTORY_ITEM_ID
+ and AA.ORGANIZATION_ID = BB.ORGANIZATION_ID
+ and AA.ORGANIZATION_ID = 1155
+ and AA.WIP_ENTITY_NAME = 'XJ39562' ;
+ --=> WIP_ENTITY_ID = 48825
+  
+-- 离散作业任务详细主信息表
+-- 用途 1 ）作业任务下达及完成情况查询
+-- 说明 1 ）此表包括 wip_entities 表大部分信息 2) 重复作业任务表为 wip_repetitive_items, wip_repetitive_schedules
+ select AA.WIP_ENTITY_ID 任务令 ID,
+ BB.WIP_ENTITY_NAME 任务名称 ,
+AA.ORGANIZATION_ID 组织 ID,
+ AA.SOURCE_LINE_ID 行 ID,
+ AA.STATUS_TYPE 状态 TYPE,
+ AA.PRIMARY_ITEM_ID 装配件 ID,
+ CC.SEGMENT1 物料编码 ,
+CC.DESCRIPTION 物料说明 ,
+AA.FIRM_PLANNED_FLAG,
+ AA.JOB_TYPE 作业类型 ,
+AA.WIP_SUPPLY_TYPE 供应 TYPE,
+ AA.CLASS_CODE 任务类别 ,
+AA.SCHEDULED_START_DATE 起始时间 ,
+AA.DATE_RELEASED 下达时间 ,
+AA.SCHEDULED_COMPLETION_DATE 完工时间 ,
+AA.DATE_COMPLETED 完工时间 ,
+AA.DATE_CLOSED 关门时间 ,
+AA.START_QUANTITY 计划数 ,
+AA.QUANTITY_COMPLETED 完工数 ,
+AA.QUANTITY_SCRAPPED 报废数 ,
+AA.NET_QUANTITY MRP 净值 ,
+AA.COMPLETION_SUBINVENTORY 接收子库 ,
+AA.COMPLETION_LOCATOR_ID 货位
+from wip_discrete_jobs AA, wip.wip_entities BB, mtl_system_items CC
+ where AA.WIP_ENTITY_ID = BB.WIP_ENTITY_ID
+ and AA.PRIMARY_ITEM_ID = CC.INVENTORY_ITEM_ID
+ and AA.ORGANIZATION_ID = CC.ORGANIZATION_ID
+ and AA.organization_id = 1155
+ and BB.WIP_ENTITY_NAME = 'XJ39562' ;
+ /*
+ 1 ）任务状态 TYPE 值说明：
+STATUS_TYPE =1 未发放的 - 收费不允许
+STATUS_TYPE =3 发入 - 收费允许
+STATUS_TYPE =4 完成 - 允许收费
+STATUS_TYPE =5 完成 - 不允许收费
+STATUS_TYPE =6 暂挂 - 不允许收费
+STATUS_TYPE =7 已取消 - 不允许收费
+STATUS_TYPE =8 等待物料单加载
+STATUS_TYPE =9 失败的物料单加载
+STATUS_TYPE =10 等待路线加载
+STATUS_TYPE =11 失败的路线加载
+STATUS_TYPE =12 关闭 - 不可收费
+STATUS_TYPE =13 等待 - 成批加载
+STATUS_TYPE =14 等待关闭
+STATUS_TYPE =15 关闭失败
+2 ）供应类型 TYPE 值说明：
+WIP_SUPPLY_TYPE =1 推式
+WIP_SUPPLY_TYPE =2 装配拉式
+WIP_SUPPLY_TYPE =3 操作拉式
+WIP_SUPPLY_TYPE =4 大量
+WIP_SUPPLY_TYPE =5 供应商
+WIP_SUPPLY_TYPE =6 虚拟
+WIP_SUPPLY_TYPE =7 以帐单为基础
+*/
+  
+-- 离散作业任务工序状况表
+select AA.ORGANIZATION_ID 组织 ID,
+ AA.WIP_ENTITY_ID 任务令 ID,
+ BB.WIP_ENTITY_NAME 任务名称 ,
+AA.OPERATION_SEQ_NUM 工序号 ,
+AA.DESCRIPTION 工序描述 ,
+AA.DEPARTMENT_ID 部门 ID,
+ AA.SCHEDULED_QUANTITY 计划数量 ,
+AA.QUANTITY_IN_QUEUE 排队数量 ,
+AA.QUANTITY_RUNNING 运行数量 ,
+AA.QUANTITY_WAITING_TO_MOVE 待移动数量 ,
+AA.QUANTITY_REJECTED 故障品数量 ,
+AA.QUANTITY_SCRAPPED 报废品数量 ,
+AA.QUANTITY_COMPLETED 完工数量 ,
+AA.FIRST_UNIT_START_DATE 最早一个单位上线时间 ,
+AA.FIRST_UNIT_COMPLETION_DATE 最早一个单位完成时间 ,
+AA.LAST_UNIT_START_DATE 最后一个单位上线时间 ,
+AA.LAST_UNIT_COMPLETION_DATE 最后一个单位完工时间 ,
+AA.PREVIOUS_OPERATION_SEQ_NUM 前一工序序号 ,
+AA.NEXT_OPERATION_SEQ_NUM 下一工序序号 ,
+AA.COUNT_POINT_TYPE 是否自动计费 ,
+AA.BACKFLUSH_FLAG 倒冲否 ,
+AA.MINIMUM_TRANSFER_QUANTITY 最小传送数量 ,
+AA.DATE_LAST_MOVED 最后移动时间
+from wip_operations AA,wip_entities BB
+ where AA.WIP_ENTITY_ID = BB.WIP_ENTITY_ID
+ and BB.WIP_ENTITY_NAME = 'XJ39562' ;
+-- 离散作业任务子查询 ——— 工单工序状况查询（不单独使用）
+select WDJ.ORGANIZATION_ID,
+ WDJ.WIP_ENTITY_ID,
+ COUNT ( 1 ) COUNT_OPER,
+ max ( decode (wo.quantity_completed, 1 , wo.operation_seq_num, 10 )) OPER
+ from WIP_DISCRETE_JOBS WDJ, WIP_OPERATIONS WO
+ where 1 = 1
+ AND WDJ.WIP_ENTITY_ID = WO.WIP_ENTITY_ID
+ AND WDJ.wip_entity_id = '48825'
+ group by WDJ.ORGANIZATION_ID,WDJ.WIP_ENTITY_ID;
+  
+  
+-- 离散作业任务 BOM ( 无材料费 )
+SELECT WOP.ORGANIZATION_ID 组织 ID,
+ WOP.WIP_ENTITY_ID 任务令 ID,
+ BB.WIP_ENTITY_NAME 装配件名称 ,
+BB.PRIMARY_ITEM_ID 装配件 ID,
+ CC.SEGMENT1 装配件物料编码 ,
+CC.DESCRIPTION 装配件说明 ,
+WOP.OPERATION_SEQ_NUM 工序号 ,
+WOP.DEPARTMENT_ID 部门 ID,
+ WOP.WIP_SUPPLY_TYPE 供应类型 ,
+WOP.DATE_REQUIRED 要求日期 ,
+WOP.INVENTORY_ITEM_ID 子物料 ID,
+ DD.SEGMENT1 子物料编码 ,
+DD.DESCRIPTION 子物料说明 ,
+WOP.QUANTITY_PER_ASSEMBLY 单位需量 ,
+WOP.REQUIRED_QUANTITY 总需求量 ,
+WOP.QUANTITY_ISSUED 已发放量 ,
+WOP.COMMENTS 注释 ,
+WOP.SUPPLY_SUBINVENTORY 供应子库
+FROM wip_requirement_operations WOP,
+ wip_entities BB,
+ mtl_system_items CC,
+ mtl_system_items DD
+ WHERE WOP.WIP_ENTITY_ID = BB.WIP_ENTITY_ID
+ and BB.PRIMARY_ITEM_ID = CC.INVENTORY_ITEM_ID
+ and BB.ORGANIZATION_ID = CC.ORGANIZATION_ID
+ and WOP.INVENTORY_ITEM_ID = DD.INVENTORY_ITEM_ID
+ and WOP.ORGANIZATION_ID = DD.ORGANIZATION_ID
+ and WOP.ORGANIZATION_ID = 1155
+ and BB.WIP_ENTITY_NAME = 'XJ39562' ;
+  
+-- 作业任务已发放材料处理记录清单 0101 （最详细） （内码为 48825 为例）
+-- 用途 1 ）查询工单发料详细明细，包括发料类型、时间、用户等
+select MTL.TRANSACTION_ID 交易 ID,
+ MTL.INVENTORY_ITEM_ID 项目 ID,
+ CC.SEGMENT1 物料编码 ,
+CC.DESCRIPTION 物料说明 ,
+MTL.ORGANIZATION_ID 组织 ID,
+ MTL.SUBINVENTORY_CODE 子库名称 ,
+MTL.TRANSACTION_TYPE_ID 交易类型 ID,
+ BB.TRANSACTION_TYPE_NAME 交易类型名称 ,
+MTL.TRANSACTION_QUANTITY 交易数量 ,
+MTL.TRANSACTION_UOM 单位 ,
+MTL.TRANSACTION_DATE 交易日期 ,
+MTL.TRANSACTION_REFERENCE 交易参考 ,
+MTL.TRANSACTION_SOURCE_ID 参考源 ID,
+ FF.WIP_ENTITY_NAME 任务名称 ,
+MTL.DEPARTMENT_ID 部门 ID,
+ MTL.OPERATION_SEQ_NUM 工序号 ,
+ROUND (MTL.PRIOR_COST, 2 ) 原来成本 ,
+ROUND (MTL.NEW_COST, 2 ) 新成本 ,
+MTL.TRANSACTION_QUANTITY * ROUND (MTL.PRIOR_COST, 2 ) 交易金额 ,
+DD.USER_NAME 用户名称 ,
+EE.FULL_NAME 用户姓名
+from mtl_material_transactions MTL,
+ mtl_transaction_types BB,
+ mtl_system_items CC,
+ FND_USER DD,
+ per_people_f EE,
+ wip_entities FF
+ where MTL.TRANSACTION_TYPE_ID = BB.TRANSACTION_TYPE_ID
+ and MTL.CREATED_BY = DD.USER_ID
+ and MTL.INVENTORY_ITEM_ID = CC.INVENTORY_ITEM_ID
+ and MTL.ORGANIZATION_ID = CC.ORGANIZATION_ID
+ and DD.EMPLOYEE_ID = EE.PERSON_ID
+ and MTL.TRANSACTION_SOURCE_ID = FF.WIP_ENTITY_ID
+ and MTL.Transaction_Type_Id in ( 35 , 38 , 43 , 48 )
+ and MTL.ORGANIZATION_ID = 1155
+ and MTL.TRANSACTION_SOURCE_ID = 48825 ;
+-- 按工单的材料费汇总（不单独使用）
+select MTL.ORGANIZATION_ID,
+ MTL.TRANSACTION_SOURCE_ID WIP_ENTITY_ID,
+ ABS ( round ( SUM (MTL.TRANSACTION_QUANTITY * MTL.PRIOR_COST), 2 )) AMT
+ from mtl_material_transactions MTL
+ where MTL.Transaction_Type_Id in ( 35 , 38 , 43 , 48 )
+ and MTL.ORGANIZATION_ID = 1155
+ and MTL.TRANSACTION_SOURCE_ID = 48825
+ group by MTL.ORGANIZATION_ID, MTL.TRANSACTION_SOURCE_ID;
+  
+-- 离散作业任务子查询 01——— 材料消耗状况及材料费综合查询
+-- 用途 1 ）查询发料状况 2 ）查询材料费物料小计
+SELECT WOP.ORGANIZATION_ID 组织 ID,
+ WOP.WIP_ENTITY_ID 任务令 ID,
+ BB.WIP_ENTITY_NAME 装配件名称 ,
+BB.PRIMARY_ITEM_ID 装配件 ID,
+ CC.SEGMENT1 装配件物料编码 ,
+CC.DESCRIPTION 装配件说明 ,
+WOP.OPERATION_SEQ_NUM 工序号 ,
+WOP.DEPARTMENT_ID 部门 ID,
+ WOP.WIP_SUPPLY_TYPE 供应类型 ,
+WOP.DATE_REQUIRED 要求日期 ,
+WOP.INVENTORY_ITEM_ID 子物料 ID,
+ DD.SEGMENT1 子物料编码 ,
+DD.DESCRIPTION 子物料说明 ,
+WOP.QUANTITY_PER_ASSEMBLY 单位需量 ,
+WOP.REQUIRED_QUANTITY 总需求量 ,
+WOP.QUANTITY_ISSUED 已发放量 ,
+CST.AMT 已发生材料费 ,
+WOP.COMMENTS 注释 ,
+WOP.SUPPLY_SUBINVENTORY 供应子库
+FROM wip_requirement_operations WOP,
+ wip_entities BB,
+ mtl_system_items CC,
+ mtl_system_items DD,
+ ( select MTL.ORGANIZATION_ID orgID,
+ MTL.TRANSACTION_SOURCE_ID wipID,
+ MTL.OPERATION_SEQ_NUM oprID,
+ MTL.INVENTORY_ITEM_ID itemID,
+ sum (MTL.TRANSACTION_QUANTITY * ROUND (MTL.actual_cost, 2 )) amt
+ from mtl_material_transactions MTL
+ where MTL.Transaction_Type_Id in ( 35 , 38 , 43 , 48 )
+ and MTL.ORGANIZATION_ID = 1155
+ and MTL.TRANSACTION_SOURCE_ID = 48825
+ group by MTL.ORGANIZATION_ID,
+ MTL.TRANSACTION_SOURCE_ID,
+ MTL.OPERATION_SEQ_NUM,
+ MTL.INVENTORY_ITEM_ID) CST
+ WHERE WOP.WIP_ENTITY_ID = BB.WIP_ENTITY_ID
+ and BB.PRIMARY_ITEM_ID = CC.INVENTORY_ITEM_ID
+ and BB.ORGANIZATION_ID = CC.ORGANIZATION_ID
+ and WOP.INVENTORY_ITEM_ID = DD.INVENTORY_ITEM_ID
+ and WOP.ORGANIZATION_ID = DD.ORGANIZATION_ID
+ and WOP.ORGANIZATION_ID = CST.orgID
+ and WOP.WIP_ENTITY_ID = CST.wipID
+ and WOP.OPERATION_SEQ_NUM = CST.oprID
+ and WOP.INVENTORY_ITEM_ID = CST.itemID
+ and WOP.ORGANIZATION_ID = 1155
+ and BB.WIP_ENTITY_NAME = 'XJ39562' ;
+  
+-- 离散作业任务子查询 0201——— 作业资源报工明细表
+SELECT WTA.ORGANIZATION_ID 组织代码 ,
+WTA.TRANSACTION_ID 交易代码 ,
+WTA.REFERENCE_ACCOUNT 参考科目 ,
+WTA.TRANSACTION_DATE 报工日期 ,
+WTA.WIP_ENTITY_ID 任务令内码 ,
+WTA.ACCOUNTING_LINE_TYPE 会计栏类型 ,
+WTA.BASE_TRANSACTION_VALUE 费用额 ,
+WTA.CONTRA_SET_ID 反方集代码 ,
+WTA.PRIMARY_QUANTITY 基本数量 ,
+WTA.RATE_OR_AMOUNT 率或金额 ,
+WTA.BASIS_TYPE 基本类型 ,
+WTA.RESOURCE_ID 资源代码 ,
+WTA.COST_ELEMENT_ID 成本要素 ID,
+ WTA.ACCOUNTING_LINE_TYPE 成本类型 ID,
+ WTA.OVERHEAD_BASIS_FACTOR 费用因子 ,
+WTA.BASIS_RESOURCE_ID 基本资源 ID,
+ WTA.CREATED_BY 录入人 ID,
+ DD.USER_NAME 用户名称 ,
+EE.FULL_NAME 用户姓名
+FROM wip_transaction_accounts WTA, FND_USER DD, per_people_f EE
+ WHERE WTA.CREATED_BY = DD.USER_ID
+ and DD.EMPLOYEE_ID = EE.PERSON_ID
+ and WTA.BASE_TRANSACTION_VALUE <> 0
+ and WTA.ORGANIZATION_ID = 1155
+ and WTA.WIP_ENTITY_ID = 48839 ;
+-- 成本类型 ID ACCOUNTING_LINE_TYPE
+ SELECT * FROM MFG_LOOKUPS ML
+ WHERE ML.LOOKUP_TYPE LIKE 'CST_ACCOUNTING_LINE_TYPE'
+ ORDER BY ML.LOOKUP_CODE;
+-- 成本要素 ID COST_ELEMENT_ID
+--( 待补充 --------------------------------------------------------------------------?)
+  
+-- 统计人工费与制造费 ( 不单独应用 )
+SELECT ORGANIZATION_ID, WIP_ENTITY_ID, SUM (HR_FEE) HR_FEE, SUM (MD_FEE) MD_FEE
+ FROM ( Select WTA.ORGANIZATION_ID,
+ WTA.WIP_ENTITY_ID,
+ decode (COST_ELEMENT_ID, 3 , WTA.BASE_TRANSACTION_VALUE, 0 ) HR_FEE,
+ decode (COST_ELEMENT_ID, 5 , WTA.BASE_TRANSACTION_VALUE, 0 ) MD_FEE
+ from WIP_TRANSACTION_ACCOUNTS WTA
+ where WTA.ACCOUNTING_LINE_TYPE = 7
+ and WTA.BASE_TRANSACTION_VALUE <> 0 ) WTA_COST
+ WHERE WTA_COST.ORGANIZATION_ID = 1155
+ AND WTA_COST.WIP_ENTITY_ID = '48839'
+ GROUP BY WTA_COST.ORGANIZATION_ID,WTA_COST.WIP_ENTITY_ID;
+  
+-- 工单进度及费用信息综合查询 ( 未下达及下达零发料和报工的看不到 )
+select WE.WIP_ENTITY_NAME 任务名称 ,
+MSI.SEGMENT1 物料 ,
+MSI.DESCRIPTION 物料描述 ,
+MSI.PRIMARY_UNIT_OF_MEASURE 单位 ,
+WDJ.SCHEDULED_START_DATE 计划开始时间 ,
+WDJ.SCHEDULED_COMPLETION_DATE 计划完成时间 ,
+WDJ.START_QUANTITY 工单数量 ,
+WDJ.QUANTITY_COMPLETED 完成数量 ,
+WDJ.DATE_RELEASED 实际开始时间 ,
+WDJ.DATE_COMPLETED 时间完成时间 ,
+WDJ.DESCRIPTION 工单备注 ,
+PP.SEGMENT1 项目号 ,
+PP.DESCRIPTION 项目描述 ,
+PT.TASK_NUMBER 任务号 ,
+PT.DESCRIPTION 任务描述 ,
+WO.COUNT_OPER 工序数 ,
+WO1.OPERATION_SEQ_NUM 当前工序 ,
+WO1.DESCRIPTION 当前工序描述 ,
+MTA.MT_FEE 材料费 ,
+WCT.HR_FEE 人工费 ,
+WCT.MD_FEE 制造费 ,
+WE.WIP_ENTITY_ID,
+ WE.ORGANIZATION_ID,
+ WDJ.PRIMARY_ITEM_ID,
+ WDJ.PROJECT_ID,
+ WDJ.TASK_ID
+ from WIP_ENTITIES WE,
+ WIP_OPERATIONS WO1,
+ WIP_DISCRETE_JOBS WDJ,
+ MTL_SYSTEM_ITEMS_B MSI,
+ PA_PROJECTS_ALL PP,
+ PA_TASKS PT,
+ ( select WDJ.ORGANIZATION_ID,
+ WDJ.WIP_ENTITY_ID,
+ COUNT ( 1 ) COUNT_OPER,
+ max ( decode (wo.quantity_completed, 1 , wo.operation_seq_num, 10 )) OPER
+ from WIP_DISCRETE_JOBS WDJ, WIP_OPERATIONS WO
+ where WDJ.WIP_ENTITY_ID = WO.WIP_ENTITY_ID
+ group by WDJ.ORGANIZATION_ID, WDJ.WIP_ENTITY_ID) WO, -- 工序进度
+( select MTL.ORGANIZATION_ID,
+ MTL.TRANSACTION_SOURCE_ID WIP_ENTITY_ID,
+ ABS ( SUM (MTL.TRANSACTION_QUANTITY * MTL.actual_cost)) MT_FEE
+ from mtl_material_transactions MTL
+ where MTL.Transaction_Type_Id in ( 35 , 38 , 43 , 48 )
+ group by MTL.ORGANIZATION_ID, MTL.TRANSACTION_SOURCE_ID) MTA, -- 材料费
+( select WTA_COST.ORGANIZATION_ID,
+ WTA_COST.WIP_ENTITY_ID,
+ SUM (WTA_COST.HR_FEE1) HR_FEE,
+ SUM (WTA_COST.MD_FEE1) MD_FEE
+ from ( select WTA.ORGANIZATION_ID,
+ WTA.WIP_ENTITY_ID,
+ decode (COST_ELEMENT_ID,
+ 3 ,
+ WTA.BASE_TRANSACTION_VALUE,
+ 0 ) HR_FEE1,
+ decode (COST_ELEMENT_ID,
+ 5 ,
+ WTA.BASE_TRANSACTION_VALUE,
+ 0 ) MD_FEE1
+ from WIP_TRANSACTION_ACCOUNTS WTA
+ where WTA.ACCOUNTING_LINE_TYPE = 7
+ and WTA.BASE_TRANSACTION_VALUE <> 0 ) WTA_COST
+ group by WTA_COST.ORGANIZATION_ID, WTA_COST.WIP_ENTITY_ID) WCT -- 人工与制造
+WHERE 1 = 1
+ AND WE.ORGANIZATION_ID = WDJ.ORGANIZATION_ID
+ AND WE.WIP_ENTITY_ID = WDJ.WIP_ENTITY_ID
+ AND WDJ.ORGANIZATION_ID = MSI.ORGANIZATION_ID
+ AND WDJ.PRIMARY_ITEM_ID = MSI.INVENTORY_ITEM_ID
+ AND WE.WIP_ENTITY_ID = WO.WIP_ENTITY_ID
+ AND WO1.WIP_ENTITY_ID = WO.WIP_ENTITY_ID
+ AND WO.OPER = WO1.OPERATION_SEQ_NUM
+ AND WE.ORGANIZATION_ID = MTA.ORGANIZATION_ID
+ AND WE.WIP_ENTITY_ID = MTA.WIP_ENTITY_ID(+)
+ AND WE.ORGANIZATION_ID = WCT.ORGANIZATION_ID
+ AND WE.WIP_ENTITY_ID = WCT.WIP_ENTITY_ID(+)
+ AND WDJ.PROJECT_ID = PP.PROJECT_ID(+)
+ AND WDJ.TASK_ID = PT.TASK_ID(+)
+ and we.organization_id = 1155
+ and we.wip_entity_id = '48825' ;
+  
+-- 工单进度及费用信息综合查询 ( 不论是否下达和发料都能看到 )
+SELECT WDJ.WIP_ENTITY_ID 任务令 ID,
+ WE.WIP_ENTITY_NAME 任务名称 ,
+WDJ.ORGANIZATION_ID 组织 ID,
+ WDJ.STATUS_TYPE 状态 ,
+WDJ.PRIMARY_ITEM_ID 装配件 ID,
+ MSI.SEGMENT1 物料编码 ,
+MSI.DESCRIPTION 物料说明 ,
+WDJ.FIRM_PLANNED_FLAG 任务类型 ,
+WDJ.JOB_TYPE 作业类型 ,
+WDJ.WIP_SUPPLY_TYPE 供应类型 ,
+WDJ.CLASS_CODE 任务类别 ,
+WDJ.SCHEDULED_START_DATE 起始时间 ,
+WDJ.DATE_RELEASED 下达时间 ,
+WDJ.DATE_COMPLETED 完工时间 ,
+WDJ.DATE_CLOSED 关闭时间 ,
+WDJ.START_QUANTITY 计划数 ,
+WDJ.QUANTITY_COMPLETED 完工数 ,
+WDJ.QUANTITY_SCRAPPED 报废数 ,
+WDJ.NET_QUANTITY MRP 净值 ,
+WDJ.DESCRIPTION 工单备注 ,
+WDJ.COMPLETION_SUBINVENTORY 接收子库 ,
+WDJ.COMPLETION_LOCATOR_ID 货位 ID,
+ WDJ.PROJECT_ID 项目 ID,
+ WDJ.TASK_ID 项目任务 ID,
+ PP.SEGMENT1 项目号 ,
+PP.DESCRIPTION 项目描述 ,
+PT.TASK_NUMBER 任务号 ,
+PT.DESCRIPTION 任务描述 ,
+WPF.COUNT_OPER 工序数 ,
+WPF.CUR_OPER 当前工序 ,
+WPF.CUR_OPERNAME 工序名 ,
+WPF.MT_FEE 材料费 ,
+WPF.HR_FEE 人工费 ,
+WPF.MD_FEE 制造费
+FROM wip_discrete_jobs WDJ,
+ wip.wip_entities WE,
+ mtl_system_items MSI,
+ PA_PROJECTS_ALL PP,
+ PA_TASKS PT,
+ ( select WDJ1.WIP_ENTITY_ID,
+ WDJ1.ORGANIZATION_ID,
+ WO.COUNT_OPER,
+ WO1.OPERATION_SEQ_NUM CUR_OPER,
+ WO1.DESCRIPTION CUR_OPERNAME,
+ MTA.MT_FEE,
+ WCT.HR_FEE,
+ WCT.MD_FEE
+ from WIP_OPERATIONS WO1,
+ WIP_DISCRETE_JOBS WDJ1,
+ ( select WDJ.ORGANIZATION_ID,
+ WDJ.WIP_ENTITY_ID,
+ COUNT ( 1 ) COUNT_OPER,
+ max ( decode (wo.quantity_completed,
+ 1 ,
+ wo.operation_seq_num,
+ 10 )) OPER
+ from WIP_DISCRETE_JOBS WDJ, WIP_OPERATIONS WO
+ where WDJ.WIP_ENTITY_ID = WO.WIP_ENTITY_ID
+ group by WDJ.ORGANIZATION_ID, WDJ.WIP_ENTITY_ID) WO, -- 工序进度
+( select MTL.ORGANIZATION_ID,
+ MTL.TRANSACTION_SOURCE_ID WIP_ENTITY_ID,
+ ABS ( SUM (MTL.TRANSACTION_QUANTITY * MTL.actual_cost)) MT_FEE
+ from mtl_material_transactions MTL
+ where MTL.Transaction_Type_Id in ( 35 , 38 , 43 , 48 )
+ group by MTL.ORGANIZATION_ID, MTL.TRANSACTION_SOURCE_ID) MTA, -- 材料费
+( select WTA_COST.ORGANIZATION_ID,
+ WTA_COST.WIP_ENTITY_ID,
+ SUM (WTA_COST.HR_FEE1) HR_FEE,
+ SUM (WTA_COST.MD_FEE1) MD_FEE
+ from ( select WTA.ORGANIZATION_ID,
+ WTA.WIP_ENTITY_ID,
+ decode (COST_ELEMENT_ID,
+ 3 ,
+ WTA.BASE_TRANSACTION_VALUE,
+ 0 ) HR_FEE1,
+ decode (COST_ELEMENT_ID,
+ 5 ,
+ WTA.BASE_TRANSACTION_VALUE,
+ 0 ) MD_FEE1
+ from WIP_TRANSACTION_ACCOUNTS WTA
+ where WTA.ACCOUNTING_LINE_TYPE = 7
+ and WTA.BASE_TRANSACTION_VALUE <> 0 ) WTA_COST
+ group by WTA_COST.ORGANIZATION_ID, WTA_COST.WIP_ENTITY_ID) WCT -- 人工与制造
+WHERE 1 = 1
+ AND WDJ1.WIP_ENTITY_ID = WO.WIP_ENTITY_ID(+)
+ AND WO1.WIP_ENTITY_ID = WO.WIP_ENTITY_ID
+ AND WO.OPER = WO1.OPERATION_SEQ_NUM
+ AND WDJ1.ORGANIZATION_ID = MTA.ORGANIZATION_ID
+ AND WDJ1.WIP_ENTITY_ID = MTA.WIP_ENTITY_ID(+)
+ AND WDJ1.ORGANIZATION_ID = WCT.ORGANIZATION_ID
+ AND WDJ1.WIP_ENTITY_ID = WCT.WIP_ENTITY_ID(+)) WPF
+ WHERE WDJ.WIP_ENTITY_ID = WE.WIP_ENTITY_ID
+ AND WDJ.ORGANIZATION_ID = WE.ORGANIZATION_ID
+ AND WDJ.PRIMARY_ITEM_ID = MSI.INVENTORY_ITEM_ID
+ AND WDJ.ORGANIZATION_ID = MSI.ORGANIZATION_ID
+ AND WDJ.PROJECT_ID = PP.PROJECT_ID(+)
+ AND WDJ.TASK_ID = PT.TASK_ID(+)
+ AND WDJ.ORGANIZATION_ID = WPF.ORGANIZATION_ID(+)
+ AND WDJ.WIP_ENTITY_ID = WPF.WIP_ENTITY_ID(+)
+ AND WDJ.organization_id = 1155
+ and PP.SEGMENT1 = '07D9202' ;
+  
+ 11. MRP相关查询 
+  
+12. 总账 GL
+select * from gl_sets_of_books 总帐
+select * from gl_code_combinations gcc where gcc.summary_flag='Y' 科目组合
+select * from gl_balances 科目余额
+select * from gl_je_batches 凭证批
+select * from gl_je_headers 凭证头
+select * from gl_je_lines 凭证行
+select * from gl_je_categories 凭证分类
+select * from gl_je_sources 凭证来源
+select * from gl_summary_templates 科目汇总模板
+select * from gl_account_hierarchies 科目汇总模板层次
+13. 应收 AR 
+select * from ar_batches_all 事务处理批
+select * from ra_customer_trx_all 发票头
+select * from ra_customer_trx_lines_all 发票行
+select * from ra_cust_trx_line_gl_dist_all 发票分配
+select * from ar_cash_receipts_all 收款
+select * from ar_receivable_applications_all 核销
+select * from ar_payment_schedules_all 发票调整
+select * from ar_adjustments_all 会计分录
+select * from ar_distributions_all 付款计划
+14. 应付 AP
+select * from ap_invoices_all 发票头
+select * from ap_invoice_distributions_all 发票行
+select * from ap_payment_schedules_all 付款计划
+select * from ap_check_stocks_all 单据
+select * from ap_checks_all 付款
+select * from ap_bank_branches 银行
+select * from ap_bank_accounts_all 银行帐号
+select * from ap_invoice_payments_all 核销
+ 
+15. 应用、值集、弹性域 
+--fnd
+ select * from fnd_application
+ select * from fnd_application_tl where application_id= 101
+ select * from fnd_application_vl where application_id = 101
+ -- 值集
+select * from fnd_flex_value_sets
+ select * from fnd_flex_values
+ select * from fnd_flex_values_vl
+-- 弹性域
+select * from fnd_id_flexs
+ select * from fnd_id_flex_structures where id_flex_code= 'GL#'
+ select * from fnd_id_flex_segments where id_flex_code= 'GL#' and id_flex_num= 50671
+  
+ select * from fnd_profile_options_vl
+ select * from fnd_concurrent_programs 程序表
+select * from fnd_concurrent_requests 请求表
+select * from fnd_concurrent_processes 进程表
+16. 许继配送管理相关表 
+--- 为了实现系统内方便的配送发货模式而开发
+-- 配送关系 （以供应处角度 ORGANIZATION_ID = 142 ）
+SELECT AA.CUSTOMER_RELATION_ID 配送关系 ID,
+ AA.ORGANIZATION_ID 组织 ID,
+ AA.CUST_ACCOUNT_ID 客户 ID,
+ CC.PARTY_NAME 客户名称 ,
+AA.CUST_ACCT_SITE_ID 配送地 ID,
+ DD.LOCATION 客户地点 ,
+DD.STATUS A 有效 ,
+AA.DELIVERY_BY_SO_FLAG 源于 CO,
+ AA.OUTBOUND_TRX_TYPE_ID 出库类型 ,
+AA.OUTBOUND_RET_TRX_TYPE_ID 出库 R 类型 ,
+AA.OUTBOUND_COST_CCID 出库账户 ID,
+ EE.concatenated_segments 出库账户 ,
+AA.CUST_ORG_ID 客户库存组织 ID,
+ AA.INBOUND_TRX_TYPE_ID 入库类型 ,
+AA.INBOUND_RET_TRX_TYPE_ID 入库 R 类型 ,
+AA.INBOUND_CONFIRM_FLAG 入库确认 ,
+AA.INBOUND_COST_CCID 入库账户 ID,
+ FF.concatenated_segments 入库账户 ,
+AA.MANAGE_CHARGE 加价率 ,
+AA.SETTLE_MODE 结算模式 ,
+AA.INBOUND_SUBIN_CODE 接收子仓库 ,
+AA.OUTBOUND_SUBIN_CODE 配送子库存 ,
+AA.ATTRIBUTE1 直接生产发料 ,
+AA.Creation_Date 创建日期 ,
+AA.CREATED_BY 创建者 ,
+AA.LAST_UPDATED_BY 更新者 ,
+AA.LAST_UPDATE_DATE 更新日期
+FROM CUX_INV_CUSTOMER_RELATION_ALL AA,
+ hz_cust_accounts BB,
+ hz_parties CC,
+ HZ_CUST_SITE_USES_ALL DD,
+ gl_code_combinations_kfv EE,
+ gl_code_combinations_kfv FF
+ WHERE AA.ORGANIZATION_ID = 142
+ AND AA.CUST_ACCOUNT_ID = BB.CUST_ACCOUNT_ID
+ AND BB.PARTY_ID = CC.PARTY_ID
+ AND AA.Cust_Acct_Site_Id = DD.Site_Use_Id
+ AND DD.STATUS = 'A'
+ AND AA.OUTBOUND_COST_CCID = EE.code_combination_id
+ AND AA.INBOUND_COST_CCID = FF.code_combination_id
+ and CC.PARTY_NAME = ' 许继电气电网保护自动化公司 ' ;
+-- 配送单头
+SELECT AA.DN_HEADER_ID 配送单 ID,
+ AA.DN_NUMBER 配送单编号 ,
+AA.DN_STATUS_CODE 状态 ,
+AA.CUST_ACCOUNT_ID 客户 ID,
+ CC.PARTY_NAME 客户名称 ,
+AA.CUST_ACCT_SITE_ID 配送地址 ID,
+ DD.LOCATION 客户地点 ,
+AA.DELIVERY_ORG_ID 配送方组织 ID,
+ AA.CUST_ORG_ID 客户组织 ID,
+ AA.MANAGE_CHARGE 费率 ,
+AA.INBOUND_CONFIRM_FLAG 入库确认否 ,
+AA.SO_HEADER_ID 销售订单 ID,
+ EE.ORDER_NUMBER 销售订单 ,
+EE.CUST_PO_NUMBER 客户 PO,
+ ee.attribute1,
+ ee.attribute2,
+ AA.PROCESS_FLAG,
+ AA.COMMENTS 配送单说明
+FROM CUX_INV_DN_HEADERS_ALL AA, hz_cust_accounts BB, hz_parties CC, HZ_CUST_SITE_USES_ALL DD,OE_ORDER_HEADERS_ALL EE
+ WHERE AA.DELIVERY_ORG_ID = 142
+ AND AA.CUST_ACCOUNT_ID = BB.CUST_ACCOUNT_ID
+ AND BB.PARTY_ID = CC.PARTY_ID
+ AND AA.Cust_Acct_Site_Id = DD.Site_Use_Id
+ AND DD.STATUS = 'A'
+ AND AA.SO_HEADER_ID = EE.HEADER_ID
+ AND AA.DN_NUMBER = '14780016022' ;
+-- 配送单明细
+SELECT AA.DN_HEADER_ID,
+ AA.DN_LINE_ID,
+ AA.SO_LINE_ID,
+ LL.LINE_NUMBER SO 行号 ,
+AA.INVENTORY_ITEM_ID 物料 ID,
+ CC.SEGMENT1 物料编码 ,
+CC.DESCRIPTION 物料说明 ,
+AA.OUTBOUND_SUBIN_CODE 发出仓 ,
+AA.OUTBOUND_LOCATOR_ID 发出货位 ,
+AA.REQUIRE_DATE 需求日期 ,
+AA.REQUIRE_QTY 需求数 ,
+AA.OUTBOUND_QTY 已出库 ,
+AA.INBOUND_QTY 已接收 ,
+AA.ATTRIBUTE1 最近确认接收数 ,
+AA.INBOUND_SUBIN_CODE 入库仓 ,
+AA.INBOUND_LOCATOR_ID 入库货位 ,
+AA.RETURN_NO_RECEIVE_QTY 退回数 ,
+AA.OUTING_QTY,
+ AA.INING_QTY,
+ AA.REQUEST_ID 最近打印请求 ID
+ FROM CUX_INV_DN_LINES_ALL AA, CUX_INV_DN_HEADERS_ALL BB,mtl_system_items CC,OE_ORDER_LINES_ALL LL
+ WHERE AA.DN_HEADER_ID = BB.DN_HEADER_ID
+ AND AA.INVENTORY_ITEM_ID = CC.INVENTORY_ITEM_ID
+ AND BB.DELIVERY_ORG_ID = CC.ORGANIZATION_ID
+ AND AA.SO_LINE_ID = LL.LINE_ID
+ AND BB.DN_NUMBER = '14780016022' ;
+  
+  
+  
+99-其他相关表 
+1) 会计科目组合表 
+-- 查询会计科目分段信息
+select * from gl_code_combinations;
+-- 查询会计科目组合信息
+select * from gl_code_combinations_kfv;
+ 2) 查询自定义的客户化相关表和视图 
+-- 静态数据字典中的视图分为三类，它们分别由三个前缀够成： user_* 、 all_* 、 dba_*
+-- user_* 该视图存储了关于当前用户所拥有的对象的信息。（即所有在该用户模式下的对象）
+-- all_* 该视图存储了当前用户能够访问的对象的信息。（与 user_* 相比， all_* 并不需要拥有该对象，只需要具有访问该对象的权限即可）
+-- dba_* 该视图存储了数据库中所有对象的信息。（前提是当前用户具有访问这些数据库的权限，一般来说必须具有管理员权限
+-- 查询该用户拥有哪些表
+select * from user_tables where table_name like 'CUX%' ;
+-- 查询该用户拥有哪些视图
+select * from user_views where view_name like 'CUX%' ;
+-- 查询该用户拥有哪些索引
+select * from user_indexes;
+ 3) 查询物料处理记录 
+说明： mtl_material_transactions 这个表记录了所有涉及仓库收发的物料交易记录，包括：采购、 WIP 、订单、杂项等多种处理模式的内容。
+-- 举例： 查询某用户在电网的账户别名发放清单
+select AA.TRANSACTION_ID 交易代码 ,
+AA.INVENTORY_ITEM_ID 项目内码 ,
+CC.SEGMENT1 物料编码 ,
+CC.DESCRIPTION 物料说明 ,
+AA.ORGANIZATION_ID 组织代码 ,
+AA.SUBINVENTORY_CODE 子库名称 ,
+AA.TRANSACTION_TYPE_ID 类型 ID,
+ BB.TRANSACTION_TYPE_NAME 类型名称 ,
+AA.TRANSACTION_QUANTITY 数量 ,
+AA.TRANSACTION_UOM 单位 ,
+AA.TRANSACTION_DATE 交易日期 ,
+AA.TRANSACTION_REFERENCE 交易参考 ,
+AA.TRANSACTION_SOURCE_ID 参考源 ID,
+ AA.DEPARTMENT_ID 部门 ID,
+ AA.OPERATION_SEQ_NUM 工序号 ,
+ROUND (AA.Actual_Cost, 2 ) 实际成本 ,
+ROUND (AA.Transaction_Cost, 2 ) 处理成本 ,
+ROUND (AA.PRIOR_COST, 2 ) 旧成本 ,
+ROUND (AA.NEW_COST, 2 ) 新成本 ,
+ROUND (AA.VARIANCE_AMOUNT, 2 ) 差异金额 ,
+AA.TRANSACTION_QUANTITY * ROUND (AA.PRIOR_COST, 2 ) 交易金额 ,
+DD.USER_NAME 用户名称 ,
+EE.FULL_NAME 用户姓名 ,
+AA.ATTRIBUTE1 弹性域人名 ,
+AA.ATTRIBUTE15 弹性域备注
+from mtl_material_transactions AA ,
+ mtl_transaction_types BB,
+ mtl_system_items CC,
+ FND_USER DD,
+ per_people_f EE
+ where AA.TRANSACTION_TYPE_ID = BB.TRANSACTION_TYPE_ID and
+ AA.CREATED_BY = DD.USER_ID and
+ AA.INVENTORY_ITEM_ID = CC.INVENTORY_ITEM_ID and
+ AA.ORGANIZATION_ID = CC.ORGANIZATION_ID and
+ DD.EMPLOYEE_ID = EE.PERSON_ID and
+ AA.ORGANIZATION_ID = 1155 AND
+ CC.SEGMENT1= '07D9202.92742' and
+ AA.TRANSACTION_DATE >= TO_DATE( '2011-01-29 00:00:00' , 'YYYY-MM-DD HH24:MI:SS' )
+ order by aa.TRANSACTION_ID;
+ /* 物料处理记录 mtl_material_transactions 表，类型与成本说明：
+-- 杂项收 TRANSACTION_TYPE_ID = 41 录入价格优先， =Actual_Cost ，移动平均 TRANSACTION_QUANTITY > 0 , 调整类似
+ 注： 1 ）如果再接收界面录入了价格，以录入价格计入 Actual_Cost ，进行移动平均
+2 ）如果没有录入价格，字段 NULL ，则系统会以当前成本接收，计入 Actual_Cost
+-- 杂项发 TRANSACTION_TYPE_ID = 31 以出 =Actual_Cost ， TRANSACTION_QUANTITY < 0 , 调整类似
+-- 采购收 TRANSACTION_TYPE_ID = 18 以 入 =Actual_Cost ，移动平均 TRANSACTION_QUANTITY > 0
+-- 采购退 TRANSACTION_TYPE_ID = 36 以 出 =Actual_Cost ， TRANSACTION_QUANTITY < 0
+注： 1) 系统按采购成本退货和扣除库存金额，不考虑已消耗状况；
+2) 如果库存金额够扣除，则扣除后重新计算出一个新成本；
+3 ）如果库存金额不够扣除，则扣除全部金额，就会出现有库存量而单位成本 =0 的物资，不够扣的部分计入字段 VARIANCE_AMOUNT 。
+-- 作业发 TRANSACTION_TYPE_ID = 35 以当前成本出， =Actual_Cost ， TRANSACTION_QUANTITY < 0 ，特定组件发料类似
+-- 作业退 TRANSACTION_TYPE_ID = 43 以当前成本入， =Actual_Cost ，不移动平均 TRANSACTION_QUANTITY > 0
+-- 配送出 TRANSACTION_TYPE_ID = 100 以当前成本出， =Actual_Cost ， TRANSACTION_QUANTITY < 0
+-- 配送退 TRANSACTION_TYPE_ID = 101 以配送价入 ， =Actual_Cost ，移动平均 TRANSACTION_QUANTITY > 0
+-- 销售发 TRANSACTION_TYPE_ID = 33 以当前成本出， =Actual_Cost ， TRANSACTION_QUANTITY < 0
+-- 销售退 TRANSACTION_TYPE_ID = 15 以当前成本入， =Actual_Cost ， TRANSACTION_QUANTITY > 0
+ */
+-- 物料处理记录类型列表
+select bb.transaction_type_id 类型 ID,
+ bb.transaction_type_name 别名 ,
+bb.description 说明
+from mtl_transaction_types BB
+ order by bb.transaction_type_id
+-- 交易来源类型列表
+SELECT *
+ FROM mtl_txn_source_types
+-- 交易原因代码表
+SELECT REASON_ID 原因代码 , REASON_NAME 名称 , DESCRIPTION 描述
+FROM inv.mtl_transaction_reasons;
+
+
+
+
+
+工艺路线
+
+
+
+SELECT MSIB.SEGMENT1,MSIB.DESCRIPTION,BORV.resource_code,BR.DESCRIPTION
+   FROM BOM_OPERATIONAL_ROUTINGS_V BOR,
+        BOM_OPERATION_SEQUENCES_V  BOS,
+        BOM_OPERATION_RESOURCES_V  BORV,
+        BOM_RESOURCES              BR,MTL_SYSTEM_ITEMS_B MSIB
+  WHERE BOR.ORGANIZATION_ID = 86
+    AND BR.ORGANIZATION_ID = 86
+    AND BOR.ASSEMBLY_ITEM_ID = MSIB.INVENTORY_ITEM_ID
+    AND MSIB.ORGANIZATION_ID=86
+    AND BOR.ROUTING_SEQUENCE_ID = BOS.ROUTING_SEQUENCE_ID
+    AND BOS.OPERATION_SEQUENCE_ID = BORV.OPERATION_SEQUENCE_ID
+    AND BR.RESOURCE_ID = BORV.RESOURCE_ID
+    AND BOS.OPERATION_SEQ_NUM =
+        (SELECT MAX(BOS1.OPERATION_SEQ_NUM)
+           FROM BOM_OPERATION_SEQUENCES_V  BOS1,
+                BOM_OPERATIONAL_ROUTINGS_V BOR1
+          WHERE BOS1.ROUTING_SEQUENCE_ID = BOR1.ROUTING_SEQUENCE_ID
+            AND BOR1.ROUTING_SEQUENCE_ID = BOR.ROUTING_SEQUENCE_ID
+            AND BOR1.ALTERNATE_ROUTING_DESIGNATOR IS NULL)
+    AND BOR.ALTERNATE_ROUTING_DESIGNATOR IS NULL
+    AND NVL(BR.ATTRIBUTE15, 'N') = 'Y' 
+
+	
+	
+一、采购订单（路径：PO/采购订单/采购订单）
+
+1、po_headers_all 采购订单头表
+
+2、po_lines_all 采购订单行表
+
+--po_header_id=po_headers_all.po_header_id
+
+--此表是保存采购订单的行信息
+
+3、po_line_locations_all 采购订单行的发送表
+
+--po_line_id=po_lines_all.po_line_id
+
+--同一采购订单行的物料可能会发往不同的地点，此表记录物料发送情况
+
+4、po_distributions_all 采购订单发送行的分配表
+
+--line_location_id=po_line_location_all.line_location_id
+
+--发往同一地点的物料也可能放在不同的子库存，此表记录物料分配情况
+
+这几个表从上到下是一对多关系的
+
+二、接收（路径：INV/事务处理/接收/接收）
+
+1、rcv_shipment_headers 接收发送头表
+
+--记录采购订单的接收情况的头表
+
+2、rcv_shipment_lines 接收发送行表
+
+--shipment_header_id=rcv_shipment_headers.shipment_header_id
+
+--记录采购订单的发送的行的接收情况
+
+3、rcv_transactions 接收事务处理表
+
+--po_header_id=po_headers_all.po_header_id
+
+--po_line_id=po_lines_all.po_line_id
+
+--line_location_id=po_line_location_all.line_location_id
+
+--po_distribution_id=po_distributions_all.po_distribution_id
+
+--shipment_header_id=rcv_shipment_headers.shipment_header_id
+
+--shipment_line_id=rcv_shipment_lines.shipment_line_id
+
+--记录采购订单的发送行的RECEIVE的信息
+
+4、rcv_receiving_sub_ledger 暂记应付表
+
+--rcv_transaction_id=rcv_transactions.transaction_id
+
+--reference2=po_headers_all.po_header_id
+
+--reference3=po_distributions_all.po_distribution_id
+
+--记录采购订单接收后，产生的暂记应付信息
+
+三、接受（路径：INV/事务处理/接收/接收事务处理）
+
+1、rcv_transactions 接收事务处理表
+
+--记录采购订单的发送行的ACCEPT的信息
+
+四、入库（路径：INV/事务处理/接收/接收事务处理）
+
+1、rcv_transactions 接收事务处理表
+
+--记录采购订单的发送行的DELIVER的信息
+
+2、mtl_material_transactions 物料事务处理表
+
+--transaction_source_id=po_headers_all.po_header_id
+
+--记录物料的存放位置发生变化的信息
+
+3、mtl_onhand_quantities 物料现有量表
+
+--记录物料的现有数量信息表
+
+4、rcv_lot_transactions
+
+--transaction_id=rcv_transaction.transaction_id
+
+--lot_number=mtl_onhand_quantities.lot_number
+
+--shipment_line_id=rcv_shipment_lines.shipment_line_id
+
+--记录接收的事务所产生的批次信息表
+
+5、mtl_transaction_lot_numbers
+
+--transaction_id=mtl_material_transactions.transaction_id
+
+--lot_number=mtl_onhand_quantities.lot_number
+
+--记录物料的存放位置发生变化的所产生的批次信息表
+
+6、rcv_serial_transactions
+
+--transaction_id=rcv_transaction.transaction_id
+
+--shipment_line_id=rcv_shipment_lines.shipment_line_id
+
+--记录接收事务的所产生的物料序列号信息表
+
+7、mtl_serial_numbers
+
+--last_txn_source_id=mtl_material_transactions.transaction_source_id
+
+--记录物料序列号的当前状态的信息表
+
+当在EBS中启用批次功能才会用到rcv_lot_transactions和mtl_transaction_lot_numbers表，启用序列号功能才会用到rcv_serial_transactions和mtl_serial_numbers表
