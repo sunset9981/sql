@@ -1,0 +1,452 @@
+-------1.simple caculation of aging 
+select * from sl_fl_tr sl, acct_trans_type acc
+where sl.trans_type = acc.trn_typ_id
+and customer_id = '262';
+
+SELECT SUM(DECODE(T.COMPUTE_CD, 2, 1, -1) *
+           (NVL(SL.CASH_AM, 0) + NVL(SL.DEPOSIT_AM, 0) +
+            NVL(SL.PRODUCT_AM, 0)))
+  FROM SL_FL_TR SL, ACCT_TRANS_TYPE T
+ WHERE --SL.TRANS_DT < to_date('06/16/2017', 'mm/dd/yyyy')
+  -- AND 
+   T.TRN_TYP_ID = SL.TRANS_TYPE
+   AND SL.CUSTOMER_ID = '262' ;--and T.TRN_TYP_NM = 'Payment';
+
+select sum(SL.CASH_AM) from sl_fl_tr sl where sl.adjustment_type_id = '202' and customer_id = '262';
+select sum(ih.sys_net_am) from inv_hdr ih where  ih.payer_customer_id = '262';
+select  sum(ph.payment_am) from paym_hdr ph where  ph.customer_id = '262';
+select distinct(ad.adjustment_type_id) from adjustment ad where ad.customer_id = '262';
+select sum(ad.adjustment_am) from adjustment ad where ad.customer_id = '262' and ad.adjustment_type_id = '202' ;--202:credit memo(-1) 
+select sum(ad.adjustment_am) from adjustment ad where ad.customer_id = '262' and ad.adjustment_type_id = '207' ;---207:Reverse Check(+)
+
+select sum(SL.CASH_AM) from sl_fl_tr sl where sl.adjustment_type_id = '202' and customer_id = '262';
+select sum(SL.CASH_AM) from sl_fl_tr sl where sl.adjustment_type_id = '207' and customer_id = '262';
+select * from paym_hdr ph where ph.customer_id = '262' order by payment_am;
+
+select * from adjustment ad where ad.customer_id = '262' and ad.adjustment_type_id = '202' order by adjustment_am ;--202:credit memo(-1) 
+select * from adjustment ad where ad.customer_id = '262' and ad.adjustment_type_id = '207' order by adjustment_am;---207:Reverse Check(+)
+
+select * from sl_fl_tr sl where sl.adjustment_type_id = '202' and customer_id = '262' order by cash_am;
+select * from sl_fl_tr sl where sl.adjustment_type_id = '207' and customer_id = '262' order by cash_am;
+
+---------2.deep caculation of aging <1>
+select *
+  from sl_fl_tr sl, acct_trans_type acc
+ where sl.trans_type = acc.trn_typ_id
+   and customer_id = '262';
+
+SELECT 'Payment', SUM(CASH_AM), COUNT(1)
+  FROM sl_fl_tr
+ WHERE customer_id = '262'
+   AND TRANS_TYPE = '1'
+ group by 'Payment'
+union all
+SELECT 'Invoice', SUM(CASH_AM), COUNT(1)
+  FROM sl_fl_tr
+ WHERE customer_id = '262'
+   AND TRANS_TYPE = '5'
+ group by 'Invoice'
+union all
+SELECT 'Credit', SUM(CASH_AM), COUNT(1)
+  FROM sl_fl_tr
+ WHERE customer_id = '262'
+   AND TRANS_TYPE = '11'
+ group by 'Credit'
+union all
+SELECT 'Debit', SUM(CASH_AM), COUNT(1)
+  FROM sl_fl_tr
+ WHERE customer_id = '262'
+   AND TRANS_TYPE = '12'
+ group by 'Debit';
+
+----INVOICE
+select INVOICE_ID, SYS_NET_AM, REMAINING_AMOUNT
+  from inv_hdr ih
+ where INVOICE_ID IN (SELECT INVOICE_ID
+                        FROM sl_fl_tr
+                       WHERE customer_id = '262'
+                         AND TRANS_TYPE = '5')
+                     order by invoice_id
+;
+
+-----PAYMENT
+select location_id, INVOICE_ID, SUM(PAYMENT_AM)
+  from (select location_id, INVOICE_ID, SUM(PAYMENT_AM) PAYMENT_AM
+          from paymENT_INVOICE ph
+         where PAYMENT_ID IN
+               (SELECT PAYMENT_ID
+                  FROM sl_fl_tr sl
+                 WHERE customer_id = '262'
+                   AND TRANS_TYPE = '1'
+                   and sl.location_id = ph.location_id)
+         GROUP BY location_id, INVOICE_ID
+        union
+        select location_id, INVOICE_ID, 0 PAYMENT_AM
+          from inv_hdr ih
+         where INVOICE_ID IN
+               (SELECT INVOICE_ID
+                  FROM sl_fl_tr sl
+                 WHERE sl.customer_id = '262'
+                   AND sl.TRANS_TYPE = '5'
+                   and sl.location_id = ih.location_id))
+ group by location_id, INVOICE_ID
+ order by invoice_id;
+
+
+
+---ADJUSTMENT 202
+select location_id, INVOICE_ID, SUM(PAYMENT_AM)
+  from (SELECT location_id, INVOICE_ID, SUM(PAYMENT_AM) PAYMENT_AM
+          FROM ADJUSTMENT_INVOICE ai
+         WHERE ADJUSTMENT_ID IN
+               (SELECT ADJUSTMENT_ID
+                  FROM sl_fl_tr sl
+                 WHERE customer_id = '262'
+                   AND TRANS_TYPE in ('11')
+                   and sl.location_id = ai.location_id)
+         GROUP BY location_id, INVOICE_ID
+        union
+        select location_id, INVOICE_ID, 0 PAYMENT_AM
+          from inv_hdr ih
+         where INVOICE_ID IN
+               (SELECT INVOICE_ID
+                  FROM sl_fl_tr sl
+                 WHERE sl.customer_id = '262'
+                   AND sl.TRANS_TYPE = '5'
+                   and sl.location_id = ih.location_id))
+ group by location_id, INVOICE_ID
+ order by invoice_id
+ ;
+ 
+ 
+---ADJUSTMENT 207
+select location_id, INVOICE_ID, SUM(PAYMENT_AM)
+  from (SELECT location_id, INVOICE_ID, SUM(PAYMENT_AM) PAYMENT_AM
+          FROM ADJUSTMENT_INVOICE ai
+         WHERE ADJUSTMENT_ID IN
+               (SELECT ADJUSTMENT_ID
+                  FROM sl_fl_tr sl
+                 WHERE customer_id = '262'
+                   AND TRANS_TYPE in ('12')
+                   and sl.location_id = ai.location_id)
+         GROUP BY location_id, INVOICE_ID
+        union
+        select location_id, INVOICE_ID, 0 PAYMENT_AM
+          from inv_hdr ih
+         where INVOICE_ID IN
+               (SELECT INVOICE_ID
+                  FROM sl_fl_tr sl
+                 WHERE sl.customer_id = '262'
+                   AND sl.TRANS_TYPE = '5'
+                   and sl.location_id = ih.location_id))
+ group by location_id, INVOICE_ID
+ order by invoice_id
+ ;
+---<2>
+SELECT *
+  FROM sl_fl_tr_bk
+ WHERE customer_id = '262'
+   AND TRANS_TYPE <> '4';
+
+
+SELECT 'Invoice', SUM(CASH_AM), COUNT(1)
+  FROM sl_fl_tr_bk
+ WHERE customer_id = '262'
+   AND TRANS_TYPE = '5'
+ group by 'Invoice'
+ union all
+ SELECT 'Payment', SUM(CASH_AM), COUNT(1)
+  FROM sl_fl_tr_bk
+ WHERE customer_id = '262'
+   AND TRANS_TYPE = '1'
+ group by 'Payment'
+union all
+SELECT 'Credit', SUM(CASH_AM), COUNT(1)
+  FROM sl_fl_tr_bk
+ WHERE customer_id = '262'
+   AND TRANS_TYPE = '11'
+ group by 'Credit'
+union all
+SELECT 'Debit', SUM(CASH_AM), COUNT(1)
+  FROM sl_fl_tr_bk
+ WHERE customer_id = '262'
+   AND TRANS_TYPE = '12'
+ group by 'Debit'
+union all
+SELECT '6', SUM(CASH_AM), COUNT(1)
+  FROM sl_fl_tr_bk
+ WHERE customer_id = '262'
+   AND TRANS_TYPE = '6'
+ group by '6'
+union all
+SELECT '7', SUM(CASH_AM), COUNT(1)
+  FROM sl_fl_tr_bk
+ WHERE customer_id = '262'
+   AND TRANS_TYPE = '7'
+ group by '7';
+
+----INVOICE
+select location_id, INVOICE_ID, SYS_NET_AM, REMAINING_AMOUNT
+  from inv_hdr_a ih
+ where INVOICE_ID IN (SELECT INVOICE_ID
+                        FROM sl_fl_tr_bk sl
+                       WHERE sl.customer_id = '262'
+                         AND sl.TRANS_TYPE = '5'
+                         and sl.location_id = ih.location_id)
+--group by invoice_id,SYS_NET_AM,REMAINING_AMOUNT,location_id
+ order by invoice_id;
+
+-----PAYMENT
+select location_id, INVOICE_ID, SUM(PAYMENT_AM)
+  from (select location_id, INVOICE_ID, SUM(PAYMENT_AM) PAYMENT_AM
+          from paymENT_INVOICE_a ph
+         where PAYMENT_ID IN
+               (SELECT PAYMENT_ID
+                  FROM sl_fl_tr_bk sl
+                 WHERE customer_id = '262'
+                   AND TRANS_TYPE = '1'
+                   and sl.location_id = ph.location_id)
+         GROUP BY location_id, INVOICE_ID
+        union
+        select location_id, INVOICE_ID, 0 PAYMENT_AM
+          from inv_hdr_a ih
+         where INVOICE_ID IN
+               (SELECT INVOICE_ID
+                  FROM sl_fl_tr_bk sl
+                 WHERE sl.customer_id = '262'
+                   AND sl.TRANS_TYPE = '5'
+                   and sl.location_id = ih.location_id))
+ group by location_id, INVOICE_ID
+ order by invoice_id;
+
+---ADJUSTMENT 202
+select location_id, INVOICE_ID, SUM(PAYMENT_AM)
+  from (SELECT location_id, INVOICE_ID, SUM(PAYMENT_AM) PAYMENT_AM
+          FROM ADJUSTMENT_INVOICE_a ai
+         WHERE ADJUSTMENT_ID IN
+               (SELECT ADJUSTMENT_ID
+                  FROM sl_fl_tr_bk sl
+                 WHERE customer_id = '262'
+                   AND TRANS_TYPE in ('11')
+                   and sl.location_id = ai.location_id)
+         GROUP BY location_id, INVOICE_ID
+        union
+        select location_id, INVOICE_ID, 0 PAYMENT_AM
+          from inv_hdr_a ih
+         where INVOICE_ID IN
+               (SELECT INVOICE_ID
+                  FROM sl_fl_tr_bk sl
+                 WHERE sl.customer_id = '262'
+                   AND sl.TRANS_TYPE = '5'
+                   and sl.location_id = ih.location_id))
+ group by location_id, INVOICE_ID
+ order by invoice_id
+ ;
+
+---ADJUSTMENT 207
+select location_id, INVOICE_ID, SUM(PAYMENT_AM)
+  from (SELECT location_id, INVOICE_ID, SUM(PAYMENT_AM) PAYMENT_AM
+          FROM ADJUSTMENT_INVOICE_a ai
+         WHERE ADJUSTMENT_ID IN
+               (SELECT ADJUSTMENT_ID
+                  FROM sl_fl_tr_bk sl
+                 WHERE customer_id = '262'
+                   AND TRANS_TYPE in ( '12')
+                   and sl.location_id = ai.location_id)
+         GROUP BY location_id, INVOICE_ID
+        union
+        select location_id, INVOICE_ID, 0 PAYMENT_AM
+          from inv_hdr_a ih
+         where INVOICE_ID IN
+               (SELECT INVOICE_ID
+                  FROM sl_fl_tr_bk sl
+                 WHERE sl.customer_id = '262'
+                   AND sl.TRANS_TYPE = '5'
+                   and sl.location_id = ih.location_id))
+ group by location_id, INVOICE_ID
+ order by invoice_id
+ ;
+
+------<3>
+SELECT *
+  FROM sl_fl_tr_bk
+ WHERE customer_id = '262'
+   AND TRANS_TYPE <> '4';
+
+----INVOICE
+select location_id, INVOICE_ID, SYS_NET_AM, REMAINING_AMOUNT
+  from inv_hdr_a ih
+ where INVOICE_ID IN (SELECT INVOICE_ID
+                        FROM sl_fl_tr_bk sl
+                       WHERE sl.customer_id = '262'
+                         AND sl.TRANS_TYPE = '5'
+                         and sl.location_id = ih.location_id)
+ order by invoice_id;
+
+---PAYMENT
+select location_id, INVOICE_ID, SUM(PAYMENT_AM)
+  from (select pi.location_id, pi.invoice_id, sum(pi.PAYMENT_AM) PAYMENT_AM
+          from paym_hdr_a ph, PAYMENT_INVOICE_A pi
+         where ph.payment_id = pi.payment_id
+           and ph.location_id = pi.location_id
+           and exists (select 1
+                  from sl_fl_tr_bk sl, acct_trans_type att
+                 where sl.location_id = ph.location_id
+                   and att.trn_typ_id = sl.trans_type
+                   AND SL.settle_id = PH.settle_id
+                   and sl.customer_id = ph.customer_id
+                   and sl.customer_id = '262'
+                   and sl.trans_type = '1'
+                   and sl.payment_id is null)
+         group by pi.invoice_id, pi.location_id
+        union
+        select location_id, INVOICE_ID, 0 PAYMENT_AM
+          from inv_hdr_a ih
+         where INVOICE_ID IN
+               (SELECT INVOICE_ID
+                  FROM sl_fl_tr_bk sl
+                 WHERE sl.customer_id = '262'
+                   AND sl.TRANS_TYPE = '5'
+                   and sl.location_id = ih.location_id))
+ group by location_id, INVOICE_ID
+ order by invoice_id;
+
+---ADJUSTMENT 202 
+select location_id, INVOICE_ID, SUM(PAYMENT_AM)
+  from (select ai.location_id, ai.invoice_id, sum(ai.payment_am) PAYMENT_AM
+          from adjustment_a ad, adjustment_type atp, adjustment_invoice_a ai
+         where ad.adjustment_type_id = atp.adjustment_type_id
+           and ad.adjustment_id = ai.adjustment_id
+           and ad.adjustment_type_id = ai.adjustment_type_id
+           and exists (select 1
+                  from sl_fl_tr_bk sl, acct_trans_type att
+                 where sl.customer_id = ad.customer_id
+                   and sl.settle_id = ad.settle_id
+                   and sl.location_id = ad.location_id
+                   and att.trn_typ_id = sl.trans_type
+                   and decode(att.compute_cd,
+                              '1',
+                              '2',
+                              '2',
+                              '1',
+                              att.compute_cd) = atp.compute_cd
+                   and sl.customer_id = '262'
+                   and sl.trans_type = '11'
+                   and sl.adjustment_id is null)
+         group by ai.invoice_id, ai.location_id
+        union
+        select location_id, INVOICE_ID, 0 PAYMENT_AM
+          from inv_hdr_a ih
+         where INVOICE_ID IN
+               (SELECT INVOICE_ID
+                  FROM sl_fl_tr_bk sl
+                 WHERE sl.customer_id = '262'
+                   AND sl.TRANS_TYPE = '5'
+                   and sl.location_id = ih.location_id))
+ group by location_id, INVOICE_ID
+ order by invoice_id;
+
+---ADJUSTMENT 207 
+select location_id, INVOICE_ID, SUM(PAYMENT_AM)
+  from (select ai.location_id, ai.invoice_id, sum(ai.payment_am) PAYMENT_AM
+          from adjustment_a ad, adjustment_type atp, adjustment_invoice_a ai
+         where ad.adjustment_type_id = atp.adjustment_type_id
+           and ad.adjustment_id = ai.adjustment_id
+           and  ad.adjustment_type_id = ai.adjustment_type_id
+           and exists (select 1
+                  from sl_fl_tr_bk sl, acct_trans_type att
+                 where sl.customer_id = ad.customer_id
+                   and sl.settle_id = ad.settle_id
+                   and sl.location_id = ad.location_id
+                   and att.trn_typ_id = sl.trans_type
+                   and decode(att.compute_cd,
+                              '1',
+                              '2',
+                              '2',
+                              '1',
+                              att.compute_cd) = atp.compute_cd
+                   and sl.customer_id = '262'
+                   and sl.trans_type = '12'
+                   and sl.adjustment_id is null)
+         group by ai.invoice_id, ai.location_id
+        union
+        select location_id, INVOICE_ID, 0 PAYMENT_AM
+          from inv_hdr_a ih
+         where INVOICE_ID IN
+               (SELECT INVOICE_ID
+                  FROM sl_fl_tr_bk sl
+                 WHERE sl.customer_id = '262'
+                   AND sl.TRANS_TYPE = '5'
+                   and sl.location_id = ih.location_id))
+ group by location_id, INVOICE_ID
+ order by invoice_id;
+
+ ---------------3.one sql of aging
+ 
+----------aging caculate
+(
+--To compare remaining_amount original and calculated
+--Fomula: remaining_amount = invoice amount - payment amount - adjustment amount(plus/negative)
+select EE.INVOICE_ID,EE.REMAINING_AMOUNT,inv_amt,pay_inv_amt,adj_inv_amt,remaining_amt_calc
+from (
+    SELECT INVOICE_ID,
+          sum(REMAINING_AMOUNT) REMAINING_AMOUNT,sum(inv_amt) inv_amt,
+          sum(pay_inv_amt) pay_inv_amt,sum(adj_inv_amt) adj_inv_amt,
+          sum(inv_amt)-sum(pay_inv_amt)-sum(adj_inv_amt) remaining_amt_calc
+    FROM (
+    --1.invoice amount
+    select 'INV' typem,location_id,INVOICE_ID, customer_id,REMAINING_AMOUNT, SYS_NET_AM inv_amt,0 pay_inv_amt, 0 adj_inv_amt 
+    from (
+        select location_id,INVOICE_ID, customer_id,SYS_NET_AM, REMAINING_AMOUNT from inv_hdr
+        union
+        select location_id,INVOICE_ID, customer_id,SYS_NET_AM, REMAINING_AMOUNT from inv_hdr_a
+    ) ih
+    union
+    --2. payment_invoice amount
+    select 'PAY' typem, location_id,INVOICE_ID, 'X' customer_id,0 REMAINING_AMOUNT, 0 inv_amt,SUM(PAYMENT_AM) pay_inv_amt, 0 adj_inv_amt 
+    from (
+        select location_id,INVOICE_ID,PAYMENT_AM from payment_invoice
+        union
+        select location_id,INVOICE_ID,PAYMENT_AM from payment_invoice_a    
+    ) ph
+    group by location_id,INVOICE_ID
+
+    union
+    --3. adjustment_invoice amount
+    select 'ADJ' typem, location_id,INVOICE_ID, 'X' customer_id,0 REMAINING_AMOUNT, 0 inv_amt,0 pay_inv_amt, 
+           SUM( DECODE(adt.COMPUTE_CD, 1, ai.PAYMENT_AM,2, -ai.PAYMENT_AM, 0)) adj_inv_amt 
+    from (
+        select location_id,INVOICE_ID,PAYMENT_AM,adjustment_type_id from adjustment_invoice
+        union
+        select location_id,INVOICE_ID,PAYMENT_AM,adjustment_type_id from adjustment_invoice_a    
+    ) ai, adjustment_type adt
+    where ai.adjustment_type_id = adt.adjustment_type_id
+    group by location_id,INVOICE_ID) SS
+    group by INVOICE_ID)ee,INV_HDR I
+where ee.remaining_amount<>remaining_amt_calc
+AND I.INVOICE_ID = EE.INVOICE_ID
+AND I.CUSTOMER_ID IN (
+'118',
+'124',
+'148',
+'244',
+'250',
+'253',
+'262',
+'263',
+'275',
+'460'
+);
+)
+
+-------------------ar:
+  SELECT NVL(SUM(DECODE(ATT.COMPUTE_CD, :PARAMETER.DEBITCD , 1, :PARAMETER.CREDITCD , -1, 0) *
+           (NVL(SL.CASH_AM, 0) + NVL(SL.DEPOSIT_AM, 0) +
+            NVL(SL.PRODUCT_AM, 0))),0) INTO V_END_BAL
+  FROM SL_FL_TR SL, ACCT_TRANS_TYPE ATT
+ WHERE SL.TRANS_DT <= :SAL_REC_DET_USER_PAR.TO_DT
+   AND SL.CUSTOMER_ID = :SAL_REC_DET_USER_PAR.CUSTOMER_ID
+   AND SL.TRANS_TYPE = ATT.TRN_TYP_ID;
+      
+ 
+
