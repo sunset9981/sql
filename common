@@ -1,14 +1,52 @@
-PSD/KSAPRD456@SA02PRD
-SA02PRD=
-  (DESCRIPTION =
-    (ADDRESS_LIST =
-      (ADDRESS = (PROTOCOL = TCP)(HOST = 30.185.146.65)(PORT = 1521))
-    )
-    (CONNECT_DATA =
-      (SID= SA02PRD)
-    )
-  )  
-  
+
+setup.exe -ignorePrereq -ignorePrereq -J"-Doracle.install.db.validate.supportedOSCheck=false"
+
+https://www.cnblogs.com/kerrycode/p/5940626.html
+http://blog.chinaunix.net/uid-28255964-id-3551144.html
+
+http://www.itpub.net/thread-2073849-1-1.html
+Ask Tom – http://asktom.oracle.com 
+
+　　Jonathan Lewis web site - http://www.jlcomp.demon.co.uk/ 
+
+　　Ixora (Steve Adams) – http://www.ixora.com.au 
+
+　　Orapub – http://www.orapub.com 
+
+　　Metalink (Oracle支持网站) – http://metalink.oracle.com 
+
+      国内的： 
+
+      ITPUB论坛 - http://www.itpub.net 
+
+      Oracle技术网 - http://www.oradb.net 
+
+      CSDN社区 - http://community.csdn.net 
+
+
+
+
+ AP - Oracle Payables 记录采购业务和付款业务
+ AR - Oracle Receivables 记录销售业务和收款业务
+ GL - Oracle General Ledger 
+ INV - Oracle Inventory 
+ PA - Oracle Projects 
+ PO - Oracle Purchasing 
+
+
+财务：GL（总账）, AP（应付款）, AR（应收款）, FA（固定资产）, CE（现金管理）
+
+
+分销：PO（采购）, INV（库存）, OM（定单管理）
+
+制造：BOM（物料清单）, WIP（在制品管理（车间管理））, MRP/MPS（生产计划管理）, CST（成本管理）, ENG（工程管理）
+
+Enterprise Resource Planning企业资源计划 sap
+ebs
+
+Gemalto
+http://www.panaya.com/
+inv_item_package.
 AP user guide
 GL,General Ledger 总账
 AP,Accounts payable 应付账款
@@ -17,6 +55,8 @@ AR,Accounts Receivable 应收账款
 oracle ebs
 Brajesh_Kumar12
 POLY_MERRIN
+
+http://blog.csdn.net/sunansheng/article/details/46493235
 http://prcsgidb1.ad.infosys.com:8020/OA_HTML/OA.jsp?OAFunc=OAHOMEPAGE&akRegionApplicationId=0&navRespId=20420&navRespAppId=1&navSecGrpId=0&transactionid=1965195946&oapc=4 
 
 
@@ -110,6 +150,12 @@ sqlplus psd/ksaprd572@sa02prd
 conn psd/ksapsd2015@sa02prd_t
 @PACKAGE_NAME
 DESC
+
+
+--v$log详细说明了重做日志文件的结构、属性以及动态变化情况。 v$logfile说明了重做日志文件的物理地址和当前在线状态。
+select * from v$logfile;
+select group#,sequence#,bytes,members,status from v$log
+
 
 HHT：hand held terminal
 HH: hand held ：手持设备
@@ -1500,3 +1546,28 @@ END;
    		v_T_DEFAULTRETAILPRICE := I.T_DEFAULTRETAILPRICE;
    	end if;
 )
+
+PSD/KSAPRD456@SA02PRD
+SA02PRD=
+  (DESCRIPTION =
+    (ADDRESS_LIST =
+      (ADDRESS = (PROTOCOL = TCP)(HOST = 30.185.146.65)(PORT = 1521))
+    )
+    (CONNECT_DATA =
+      (SID= SA02PRD)
+    )
+  )  
+  
+  ----按照层级关系找上级
+  SELECT LOCATION_ID, LOC_TYPE_ID, LOCATION_NM
+  FROM LOCATION
+ /*WHERE ((LOC_TYPE_ID IN
+       (SELECT LOC_TYPE_ID FROM LOCATION_TYPE WHERE ROUTE_FL = 1) OR
+       LOC_TYPE_ID = '14') AND :TEMP_HH.ROUTE_ID IS NULL)
+    OR ((LOCATION_ID IN
+       (SELECT ROUTE_ID
+            FROM TEMP_HH
+           WHERE T_SESSION_ID = :PARAMETER.T_SESSION_ID)) AND
+       :TEMP_HH.ROUTE_ID IS NOT NULL)*/
+CONNECT BY PRIOR  P_LOC_ID= LOCATION_ID
+ START WITH LOCATION_ID = '773195';
