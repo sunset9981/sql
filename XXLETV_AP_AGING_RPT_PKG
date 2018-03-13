@@ -1,0 +1,317 @@
+create or replace PACKAGE XXLETV_AP_AGING_RPT_PKG IS
+
+   /*******************************************************************************************************
+   * TYPE            : Package Spec                                                                       *
+   * NAME            : XXLETV_AP_AGING_RPT_PKG                                                           *
+   * INPUT Parameters:                                                                                    *
+   * OUTPUT Parameters:                                                                                   *
+   * PURPOSE         :                                                                                    *
+   *                                                                                                      *
+   * Author          Date         Ver        Description                                                  *
+   * ------     -----------     -------      -------------------------------------------------------------*
+   * Infosys     10/03/2017      V1.0        Created                                                      *
+   *                                                                                                      *
+   *                                                                                                      *
+   ********************************************************************************************************/
+
+  PROCEDURE MAIN(P_ERRBUF            OUT NOCOPY VARCHAR2,
+                   P_RETCODE         OUT NOCOPY VARCHAR2,
+                   P_ORG_ID          IN VARCHAR2,
+                   P_INPUT_DATE      IN VARCHAR2,
+                   P_INVOICE_NUM_F   IN VARCHAR2,
+                   P_INVOICE_NUM_T   IN VARCHAR2,
+                   P_VENDOR_NUM_F    IN VARCHAR2,
+                   P_VENDOR_NUM_T    IN VARCHAR2,                
+                   P_INVOICE_DATE_F  IN VARCHAR2,
+                   P_INVOICE_DATE_T  IN VARCHAR2,
+                   P_GL_DATE_F       IN VARCHAR2,
+                   P_GL_DATE_T       IN VARCHAR2,
+                   P_DUE_DATE_F      IN VARCHAR2,
+                   P_DUE_DATE_T      IN VARCHAR2,
+                   P_TERM_FROM       IN VARCHAR2,
+                   P_TERM_TO         IN VARCHAR2
+                );
+
+
+
+END XXLETV_AP_AGING_RPT_PKG;
+/
+create or replace PACKAGE BODY XXLETV_AP_AGING_RPT_PKG IS
+
+   /*******************************************************************************************************
+   * TYPE            : Package Body                                                                       *
+   * NAME            : XXLETV_AP_AGING_RPT_PKG                                                           *
+   * INPUT Parameters:                                                                                    *
+   * OUTPUT Parameters:                                                                                   *
+   * PURPOSE         :                                                                                    *
+   *                                                                                                      *
+   * Author          Date         Ver        Description                                                  *
+   * ------     -----------     -------      -------------------------------------------------------------*
+   * Infosys     10/03/2017      V1.0        Created                                                      *
+   *                                                                                                      *
+   *                                                                                                      *
+   ********************************************************************************************************/
+
+  PROCEDURE OUTPRINT(P_MESSAGE IN  VARCHAR2) IS
+  BEGIN
+    FND_FILE.PUT_LINE(FND_FILE.OUTPUT, P_MESSAGE);
+  END OUTPRINT;
+
+  PROCEDURE MAIN(p_errbuf            OUT NOCOPY VARCHAR2,
+                   p_retcode         OUT NOCOPY VARCHAR2,
+                   p_org_id          IN VARCHAR2,
+                   p_input_date      IN VARCHAR2,
+                   p_invoice_num_f   IN VARCHAR2,
+                   p_invoice_num_t   IN VARCHAR2,
+                   p_vendor_num_f    IN VARCHAR2,
+                   p_vendor_num_t    IN VARCHAR2,                
+                   p_invoice_date_f  IN VARCHAR2,
+                   p_invoice_date_t  IN VARCHAR2,
+                   p_gl_date_f       IN VARCHAR2,
+                   p_gl_date_t       IN VARCHAR2,
+                   p_due_date_f      IN VARCHAR2,
+                   p_due_date_t      IN VARCHAR2,
+                   p_term_from       IN VARCHAR2,
+                   p_term_to         IN VARCHAR2
+                   ) IS
+
+      CURSOR cur_all(i_org_id number,  i_input_date date,
+              i_invoice_num_f varchar2,i_invoice_num_t  varchar2,
+              i_vendor_num_f  varchar2,i_vendor_num_t   varchar2,
+              i_invoice_date_f date,   i_invoice_date_t date,
+              i_gl_date_f      date,   i_gl_date_t      date,
+              i_due_date_f     date,   i_due_date_t     date,
+              i_term_from  varchar2,   i_term_to varchar2
+      ) IS
+      select tt.liability_account,
+          tt.vendor_number, tt.vendor_name, tt.invoice_num||'  ' invoice_num, tt.po_number, 
+          tt.invoice_date, tt.gl_date, tt.due_date, tt.payment_term, tt.currency, tt.invoice_amount,
+        (case when tt.day_no<=0 then tt.unpay_amount else 0 end) current_amount,
+        (case when tt.day_no>=1 and tt.day_no<=30 then tt.unpay_amount else 0 end) past_due_30,
+        (case when tt.day_no>=31 and tt.day_no<=60 then tt.unpay_amount else 0 end) past_due_60,
+        (case when tt.day_no>=61 and tt.day_no<=90 then tt.unpay_amount else 0 end) past_due_90,
+        (case when tt.day_no>=91 and tt.day_no<=180 then tt.unpay_amount else 0 end) past_due_180,
+        (case when tt.day_no>=181 and tt.day_no<=360 then tt.unpay_amount else 0 end) past_due_360,
+        (case when tt.day_no>=361 then tt.unpay_amount else 0 end) past_due_361
+      from (
+        select aia.invoice_id,
+           asp.segment1 vendor_number, 
+           asp.vendor_name,
+           aia.invoice_num,
+           po_no.po_number,
+           aia.invoice_date, aia.gl_date, apsa.due_date, --aia.invoice_date+atl.due_days due_date2,
+           att.name payment_term, aia.payment_currency_code currency,
+           aia.invoice_amount,
+           nvl(payment_info.paid_amount,0) paid_amount,
+           trunc(i_input_date)-trunc(due_date) day_no,
+           aia.invoice_amount-nvl(payment_info.paid_amount,0) unpay_amount,
+           (select gcc.concatenated_segments --xte.ledger_id, xah.ae_header_id, xal.ae_line_num, xte.source_id_int_1,
+            from 
+              xla_transaction_entities_upg xte, 
+              xla_events xe, 
+              xla_ae_headers xah, 
+              xla_ae_lines xal,
+              gl_code_combinations_kfv gcc
+            where xte.entity_id = xe.entity_id
+            and xte.application_id = xe.application_id
+            and xe.entity_id = xah.entity_id
+            and xe.application_id = xah.application_id
+            and xe.event_id = xah.event_id
+            and xah.ae_header_id = xal.ae_header_id
+            and xah.application_id = xal.application_id
+            and xal.code_combination_id=gcc.code_combination_id
+            and xte.entity_code='AP_INVOICES'
+            and xal.accounting_class_code='LIABILITY'
+            and xte.source_id_int_1=aia.invoice_id
+            and rownum=1
+           ) liability_account
+        from ap_invoices_all aia, ap_terms_tl att, ap_terms_lines atl,
+             ap_suppliers asp, ap_payment_schedules_all apsa,
+             (select po_info.invoice_id,po_info.set_of_books_id,
+                listagg(po_info.po_number,',') within group (order by po_info.invoice_id) po_number
+              from (
+                select distinct aida.invoice_id,aida.set_of_books_id, pha.segment1 po_number
+                from ap_invoice_distributions_all aida, po_distributions_all pda, po_headers_all pha
+                where aida.po_distribution_id=pda.po_distribution_id
+                 and pda.po_header_id=pha.po_header_id
+              --   and aida.invoice_id=33481
+              ) po_info
+              group by po_info.invoice_id,po_info.set_of_books_id
+           ) po_no,
+           (select aipa.invoice_id, aipa.set_of_books_id, sum(aipa.amount) paid_amount--, aca.check_date payment_date
+            from ap_invoice_payments_all aipa, ap_checks_all aca
+            where aipa.check_id=aca.check_id
+              and aca.check_date <= i_input_date
+            group by aipa.invoice_id, aipa.set_of_books_id
+            ) payment_info
+        where aia.terms_id=att.term_id
+         and att.term_id=atl.term_id
+         and aia.vendor_id=asp.vendor_id
+         and aia.invoice_id=apsa.invoice_id
+         and aia.invoice_id=po_no.invoice_id(+)
+         and aia.set_of_books_id=po_no.set_of_books_id(+)
+         and aia.invoice_id=payment_info.invoice_id(+)
+         and aia.set_of_books_id=payment_info.set_of_books_id(+)
+         and aia.org_id=i_org_id
+         and aia.creation_date <= i_input_date --?
+         and aia.invoice_date between nvl(i_invoice_date_f,aia.invoice_date) and nvl(i_invoice_date_t,aia.invoice_date)
+         and aia.gl_date between nvl(i_gl_date_f,aia.gl_date) and nvl(i_gl_date_t,aia.gl_date)
+         and apsa.due_date between nvl(i_due_date_f,apsa.due_date) and nvl(i_due_date_t,apsa.due_date)
+         and aia.invoice_num between nvl(i_invoice_num_f,aia.invoice_num) and nvl(i_invoice_num_t,aia.invoice_num) --in ('20161114','388')
+         and asp.segment1 between nvl(i_vendor_num_f,asp.segment1) and nvl(i_vendor_num_t,asp.segment1)
+         and att.name between nvl(i_term_from,att.name) and nvl(i_term_to,att.name)
+       ) tt
+      where tt.unpay_amount>0
+      order by tt.vendor_name, tt.invoice_date
+      ;
+
+    v_input_date     DATE := null;
+    v_invoice_date_f DATE := null;
+    v_invoice_date_t DATE := null;
+    v_gl_date_f      DATE := null;
+    v_gl_date_t      DATE := null;
+    v_due_date_f     DATE := null;
+    v_due_date_t     DATE := null;
+    v_vendor_num     VARCHAR2(20) := '-';
+    v_amount_vendor  NUMBER := 0;
+    v_0_vendor       NUMBER := 0;
+    v_30_vendor      NUMBER := 0;
+    v_60_vendor      NUMBER := 0;
+    v_90_vendor      NUMBER := 0;
+    v_180_vendor     NUMBER := 0;
+    v_360_vendor     NUMBER := 0;
+    v_361_vendor     NUMBER := 0;
+    v_amount_total   NUMBER := 0;
+    v_0_total        NUMBER := 0;
+    v_30_total       NUMBER := 0;
+    v_60_total       NUMBER := 0;
+    v_90_total       NUMBER := 0;
+    v_180_total      NUMBER := 0;
+    v_360_total      NUMBER := 0;
+    v_361_total      NUMBER := 0;
+  BEGIN
+    FND_FILE.PUT_LINE(fnd_file.LOG, 'P_ORG_ID:  '||P_ORG_ID);
+    FND_FILE.PUT_LINE(fnd_file.LOG, 'P_INPUT_DATE:  '||P_INPUT_DATE);
+    FND_FILE.PUT_LINE(fnd_file.LOG, 'P_INVOICE_NUM_F:  '||P_INVOICE_NUM_F);  
+    FND_FILE.PUT_LINE(fnd_file.LOG, 'P_INVOICE_NUM_T:  '||P_INVOICE_NUM_T);
+    FND_FILE.PUT_LINE(fnd_file.LOG, 'P_VENDOR_NUM_F:  '||P_VENDOR_NUM_F);
+    FND_FILE.PUT_LINE(fnd_file.LOG, 'P_VENDOR_NUM_T:  '||P_VENDOR_NUM_T);
+    FND_FILE.PUT_LINE(fnd_file.LOG, 'P_INVOICE_DATE_F:  '||P_INVOICE_DATE_F);
+    FND_FILE.PUT_LINE(fnd_file.LOG, 'P_INVOICE_DATE_T:  '||P_INVOICE_DATE_T);
+    FND_FILE.PUT_LINE(fnd_file.LOG, 'P_GL_DATE_F:  '||P_GL_DATE_F);  
+    FND_FILE.PUT_LINE(fnd_file.LOG, 'P_GL_DATE_T:  '||P_GL_DATE_T);
+    FND_FILE.PUT_LINE(fnd_file.LOG, 'P_DUE_DATE_F:  '||P_DUE_DATE_F);
+    FND_FILE.PUT_LINE(fnd_file.LOG, 'P_DUE_DATE_T:  '||P_DUE_DATE_T);
+    FND_FILE.PUT_LINE(fnd_file.LOG, 'P_TERM_FROM:  '||P_TERM_FROM);
+    FND_FILE.PUT_LINE(fnd_file.LOG, 'P_TERM_TO:  '||P_TERM_TO);    
+    
+    v_input_date     := to_date(p_input_date,'yyyy/mm/dd hh24:mi:ss');
+    v_invoice_date_f := to_date(p_invoice_date_f,'yyyy/mm/dd hh24:mi:ss');
+    v_invoice_date_t := to_date(p_invoice_date_t,'yyyy/mm/dd hh24:mi:ss');
+    v_gl_date_f      := to_date(p_gl_date_f,'yyyy/mm/dd hh24:mi:ss');
+    v_gl_date_t      := to_date(p_gl_date_t,'yyyy/mm/dd hh24:mi:ss');
+    v_due_date_f     := to_date(p_due_date_f,'yyyy/mm/dd hh24:mi:ss');
+    v_due_date_t     := to_date(p_due_date_t,'yyyy/mm/dd hh24:mi:ss');
+-------OUTPRINT RESULT--------------------------  
+    OUTPRINT('<?xml version="1.0" ?>');
+    OUTPRINT('<ROOT>');
+    OUTPRINT('<AP_AGING_RPT>');
+      FOR v_rec IN cur_all(p_org_id, v_input_date, p_invoice_num_f,p_invoice_num_t,
+              p_vendor_num_f,p_vendor_num_t,v_invoice_date_f,v_invoice_date_t,
+              v_gl_date_f,v_gl_date_t,v_due_date_f,v_due_date_t,p_term_from,p_term_to ) LOOP  
+
+        v_amount_total   := v_amount_total+v_rec.invoice_amount;
+        v_0_total        := v_0_total+v_rec.current_amount;
+        v_30_total       := v_30_total+v_rec.past_due_30;
+        v_60_total       := v_60_total+v_rec.past_due_60;
+        v_90_total       := v_90_total+v_rec.past_due_90;
+        v_180_total      := v_180_total+v_rec.past_due_180;
+        v_360_total      := v_360_total+v_rec.past_due_360;
+        v_361_total      := v_361_total+v_rec.past_due_361;       
+
+        IF v_vendor_num <> v_rec.vendor_number THEN
+          IF v_vendor_num <> '-' THEN
+            OUTPRINT('<AP_AGING_VENDOR>');
+              OUTPRINT('<INVOICE_AMOUNT_VENDOR>' || trim(to_char(v_amount_vendor, '999,999,999,999,999,999.99')) ||'</INVOICE_AMOUNT_VENDOR>');
+              OUTPRINT('<CURRENT_AMOUNT_VENDOR>' || trim(to_char(v_0_vendor, '999,999,999,999,999,999.99')) ||'</CURRENT_AMOUNT_VENDOR>');
+              OUTPRINT('<PAST_DUE_30_VENDOR>' || trim(to_char(v_30_vendor, '999,999,999,999,999,999.99')) ||'</PAST_DUE_30_VENDOR>');
+              OUTPRINT('<PAST_DUE_60_VENDOR>' || trim(to_char(v_60_vendor, '999,999,999,999,999,999.99')) ||'</PAST_DUE_60_VENDOR>');
+              OUTPRINT('<PAST_DUE_90_VENDOR>' || trim(to_char(v_90_vendor, '999,999,999,999,999,999.99')) ||'</PAST_DUE_90_VENDOR>');
+              OUTPRINT('<PAST_DUE_180_VENDOR>' || trim(to_char(v_180_vendor, '999,999,999,999,999,999.99')) ||'</PAST_DUE_180_VENDOR>');
+              OUTPRINT('<PAST_DUE_360_VENDOR>' || trim(to_char(v_360_vendor, '999,999,999,999,999,999.99')) ||'</PAST_DUE_360_VENDOR>');
+              OUTPRINT('<PAST_DUE_361_VENDOR>' || trim(to_char(v_361_vendor, '999,999,999,999,999,999.99')) ||'</PAST_DUE_361_VENDOR>');
+            OUTPRINT('</AP_AGING_VENDOR>');
+            OUTPRINT('</AP_AGING_RPT>');
+            OUTPRINT('<AP_AGING_RPT>');
+          END IF;
+          v_amount_vendor  := v_rec.invoice_amount;
+          v_0_vendor       := v_rec.current_amount;
+          v_30_vendor      := v_rec.past_due_30;
+          v_60_vendor      := v_rec.past_due_60;
+          v_90_vendor      := v_rec.past_due_90;
+          v_180_vendor     := v_rec.past_due_180;
+          v_360_vendor     := v_rec.past_due_360;
+          v_361_vendor     := v_rec.past_due_361;
+        ELSE
+          v_amount_vendor  := v_amount_vendor+v_rec.invoice_amount;
+          v_0_vendor       := v_0_vendor+v_rec.current_amount;
+          v_30_vendor      := v_30_vendor+v_rec.past_due_30;
+          v_60_vendor      := v_60_vendor+v_rec.past_due_60;
+          v_90_vendor      := v_90_vendor+v_rec.past_due_90;
+          v_180_vendor     := v_180_vendor+v_rec.past_due_180;
+          v_360_vendor     := v_360_vendor+v_rec.past_due_360;
+          v_361_vendor     := v_361_vendor+v_rec.past_due_361;
+        END IF;
+
+          OUTPRINT('<AP_AGING_DETAIL>');
+--          OUTPRINT('<LIABILITY_ACCOUNT>' || v_rec.liability_account ||'</LIABILITY_ACCOUNT>');
+          OUTPRINT('<LIABILITY_ACCOUNT><![CDATA[' || v_rec.liability_account ||']]></LIABILITY_ACCOUNT>');
+          OUTPRINT('<VENDOR_NUMBER><![CDATA[' || v_rec.vendor_number ||']]></VENDOR_NUMBER>');
+          OUTPRINT('<VENDOR_NAME><![CDATA[' || v_rec.vendor_name ||']]></VENDOR_NAME>');
+          OUTPRINT('<INVOICE_NUM><![CDATA[' || v_rec.invoice_num ||']]></INVOICE_NUM>');
+          OUTPRINT('<PO_NUMBER><![CDATA[' || v_rec.po_number ||']]></PO_NUMBER>');
+          OUTPRINT('<INVOICE_DATE>' || v_rec.invoice_date ||'</INVOICE_DATE>');
+          OUTPRINT('<GL_DATE>' || v_rec.gl_date ||'</GL_DATE>');
+          OUTPRINT('<DUE_DATE>' || v_rec.due_date ||'</DUE_DATE>');
+          OUTPRINT('<PAYMENT_TERM><![CDATA[' || v_rec.payment_term ||']]></PAYMENT_TERM>');
+          OUTPRINT('<CURRENCY>' || v_rec.currency ||'</CURRENCY>');
+          OUTPRINT('<INVOICE_AMOUNT>' || trim(to_char(v_rec.invoice_amount, '999,999,999,999,999,999.99')) ||'</INVOICE_AMOUNT>');
+          OUTPRINT('<CURRENT_AMOUNT>' || trim(to_char(v_rec.current_amount, '999,999,999,999,999,999.99')) ||'</CURRENT_AMOUNT>');
+          OUTPRINT('<PAST_DUE_30>' || trim(to_char(v_rec.past_due_30, '999,999,999,999,999,999.99')) ||'</PAST_DUE_30>');
+          OUTPRINT('<PAST_DUE_60>' || trim(to_char(v_rec.past_due_60, '999,999,999,999,999,999.99')) ||'</PAST_DUE_60>');
+          OUTPRINT('<PAST_DUE_90>' || trim(to_char(v_rec.past_due_90, '999,999,999,999,999,999.99')) ||'</PAST_DUE_90>');
+          OUTPRINT('<PAST_DUE_180>' || trim(to_char(v_rec.past_due_180, '999,999,999,999,999,999.99')) ||'</PAST_DUE_180>');
+          OUTPRINT('<PAST_DUE_360>' || trim(to_char(v_rec.past_due_360, '999,999,999,999,999,999.99')) ||'</PAST_DUE_360>');
+          OUTPRINT('<PAST_DUE_361>' || trim(to_char(v_rec.past_due_361, '999,999,999,999,999,999.99')) ||'</PAST_DUE_361>');
+          OUTPRINT('</AP_AGING_DETAIL>');
+        v_vendor_num := v_rec.vendor_number;
+      END LOOP;
+      
+        OUTPRINT('<AP_AGING_VENDOR>');
+              OUTPRINT('<INVOICE_AMOUNT_VENDOR>' || trim(to_char(v_amount_vendor, '999,999,999,999,999,999.99')) ||'</INVOICE_AMOUNT_VENDOR>');
+              OUTPRINT('<CURRENT_AMOUNT_VENDOR>' || trim(to_char(v_0_vendor, '999,999,999,999,999,999.99')) ||'</CURRENT_AMOUNT_VENDOR>');
+              OUTPRINT('<PAST_DUE_30_VENDOR>' || trim(to_char(v_30_vendor, '999,999,999,999,999,999.99')) ||'</PAST_DUE_30_VENDOR>');
+              OUTPRINT('<PAST_DUE_60_VENDOR>' || trim(to_char(v_60_vendor, '999,999,999,999,999,999.99')) ||'</PAST_DUE_60_VENDOR>');
+              OUTPRINT('<PAST_DUE_90_VENDOR>' || trim(to_char(v_90_vendor, '999,999,999,999,999,999.99')) ||'</PAST_DUE_90_VENDOR>');
+              OUTPRINT('<PAST_DUE_180_VENDOR>' || trim(to_char(v_180_vendor, '999,999,999,999,999,999.99')) ||'</PAST_DUE_180_VENDOR>');
+              OUTPRINT('<PAST_DUE_360_VENDOR>' || trim(to_char(v_360_vendor, '999,999,999,999,999,999.99')) ||'</PAST_DUE_360_VENDOR>');
+              OUTPRINT('<PAST_DUE_361_VENDOR>' || trim(to_char(v_361_vendor, '999,999,999,999,999,999.99')) ||'</PAST_DUE_361_VENDOR>');
+        OUTPRINT('</AP_AGING_VENDOR>');      
+      OUTPRINT('</AP_AGING_RPT>');
+      
+      OUTPRINT('<AP_AGING_TOTAL>');
+          OUTPRINT('<INVOICE_AMOUNT_TOTAL>' || trim(to_char(v_amount_total, '999,999,999,999,999,999.99')) ||'</INVOICE_AMOUNT_TOTAL>');
+          OUTPRINT('<CURRENT_AMOUNT_TOTAL>' || trim(to_char(v_0_total, '999,999,999,999,999,999.99')) ||'</CURRENT_AMOUNT_TOTAL>');
+          OUTPRINT('<PAST_DUE_30_TOTAL>' || trim(to_char(v_30_total, '999,999,999,999,999,999.99')) ||'</PAST_DUE_30_TOTAL>');
+          OUTPRINT('<PAST_DUE_60_TOTAL>' || trim(to_char(v_60_total, '999,999,999,999,999,999.99')) ||'</PAST_DUE_60_TOTAL>');
+          OUTPRINT('<PAST_DUE_90_TOTAL>' || trim(to_char(v_90_total, '999,999,999,999,999,999.99')) ||'</PAST_DUE_90_TOTAL>');
+          OUTPRINT('<PAST_DUE_180_TOTAL>' || trim(to_char(v_180_total, '999,999,999,999,999,999.99')) ||'</PAST_DUE_180_TOTAL>');
+          OUTPRINT('<PAST_DUE_360_TOTAL>' || trim(to_char(v_360_total, '999,999,999,999,999,999.99')) ||'</PAST_DUE_360_TOTAL>');
+          OUTPRINT('<PAST_DUE_361_TOTAL>' || trim(to_char(v_361_total, '999,999,999,999,999,999.99')) ||'</PAST_DUE_361_TOTAL>');
+      OUTPRINT('</AP_AGING_TOTAL>');    
+    OUTPRINT('</ROOT>');
+
+  END;
+  
+
+END XXLETV_AP_AGING_RPT_PKG;
