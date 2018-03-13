@@ -1,3 +1,36 @@
+Credit Memo和Debit Memo在AR以及AP中的概念比较
+AR和AP中都有Credit Memo和Debit Memo的概念, 但是其含义和用法完全不一样，比较难懂，现在整理如下：
+AR中的CreditMemo和DebitMemo是和客户打交道：
+AR中的CreditMemo是指的红字发票，金额一般是负数，用来冲销应收账款。当客户购买我们的货物后，还没有付钱的情况下需要全部退货，或者部分退货。我们就开这样的一张红字发票，用来冲销我们的应收账款。当然如果钱都已经收到了，那么就用Refund功能进行退款。
+AR中的DebitMemo是指的向客户征收附加费用的单据，金额是正数，用来增加应收账款。比如发货给客户，并创建了invoice发票后，发现还有一些附加的费用没有算在里面，比如保管费用，所以就另外创建一个Debit Memo，用来增加应收。
+-------------------------
+AP中的Credit Memo和Debit Memo都是和供应商打交道：
+当我们收到供应商的货物后，发现部分质量有问题，提出部分退货。 供应商同意后，发出一张Credit Memo给我们，我们在系统录入。录入Credit Memo后，这个金额是负数，可以用来冲销原来的应付的Invoice的金额。
+而Debit Memo创建的的原因在于： 我们收到供应商的货物的过程中，可能垫付了部分费用，这些费用按道理应该是由供应商出的。所以我们给供应商发了一个通知，说这部分垫付的钱会在应付的货款中扣除。同时在系统中录入Debit Memo，金额为负数，用来冲销应付Invoice的金额。
+
+
+
+oracle XML Publisher
+
+Oracle XML Publisher Report Designer's Guide Release 12
+https://docs.oracle.com/cd/B40089_10/current/acrobat/120xdorg.pdf
+Oracle Administration and developer's guide Release 12
+https://docs.oracle.com/cd/B34956_01/current/acrobat/120xdoig.pdf
+
+Tutorial - Creating Reports in Oracle E-Business Suite Using XML Publisher
+http://www.oracle.com/webfolder/technetwork/tutorials/obe/fmw/bi/xmlp_ebiz/index.html
+
+XML Publisher takes the help of XLIFF (XML Localization Interchange File Format) in order to "localize" your reports (translate into local language). Task#4 is all about this "localization" of XML Publisher reports.
+http://docs.oasis-open.org/xliff/v1.2/os/xliff-core.html#SectionIntroduction
+http://www.loc.gov/standards/iso639-2/php/code_list.php
+
+PostgreSQL
+Oracle XML Publisher:
+http://www.oracle.com/technetwork/topics/bipublisheroverview-1-133573.pdf?bcsi_scan_94a977aee9df674a=ckJu7fi0/oMS1ilbew359jD4Ls4kAAAAO2231Q==&bcsi_scan_filename=bipublisheroverview-1-133573.pdf
+
+https://docs.microsoft.com/en-us/power-bi/desktop-quickstart-learn-dax-basics
+https://msdn.microsoft.com/en-us/library/mt211003.aspx
+
 
 setup.exe -ignorePrereq -ignorePrereq -J"-Doracle.install.db.validate.supportedOSCheck=false"
 
