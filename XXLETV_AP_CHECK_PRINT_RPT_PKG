@@ -1,0 +1,211 @@
+create or replace PACKAGE XXLETV_AP_CHECK_PRINT_RPT_PKG IS
+
+   /*******************************************************************************************************
+   * TYPE            : Package Spec                                                                       *
+   * NAME            : XXLETV_AP_CHECK_PRINT_RPT_PKG                                                           *
+   * INPUT Parameters:                                                                                    *
+   * OUTPUT Parameters:                                                                                   *
+   * PURPOSE         :                                                                                    *
+   *                                                                                                      *
+   * Author          Date         Ver        Description                                                  *
+   * ------     -----------     -------      -------------------------------------------------------------*
+   * Infosys     03/01/2017      V1.0        Created                                                      *
+   *                                                                                                      *
+   *                                                                                                      *
+   ********************************************************************************************************/
+
+  PROCEDURE MAIN(P_ERRBUF            OUT NOCOPY VARCHAR2,
+                   P_RETCODE         OUT NOCOPY VARCHAR2,
+                   P_ORG_ID          IN VARCHAR2,                   
+                   P_SUPPLIER_FROM   IN VARCHAR2,
+                   P_SUPPLIER_TO     IN VARCHAR2,
+                   P_DATE_FROM       IN VARCHAR2,
+                   P_DATE_TO         IN VARCHAR2,
+                   P_CHECK_NUM_FROM  IN VARCHAR2,
+                   P_CHECK_NUM_TO    IN VARCHAR2,
+                   P_BREAK_NUM       IN NUMBER
+                );
+
+
+
+END XXLETV_AP_CHECK_PRINT_RPT_PKG;
+/
+create or replace PACKAGE BODY XXLETV_AP_CHECK_PRINT_RPT_PKG IS
+
+   /*******************************************************************************************************
+   * TYPE            : Package Body                                                                       *
+   * NAME            : XXLETV_AP_CHECK_PRINT_RPT_PKG                                                           *
+   * INPUT Parameters:                                                                                    *
+   * OUTPUT Parameters:                                                                                   *
+   * PURPOSE         :                                                                                    *
+   *                                                                                                      *
+   * Author          Date         Ver        Description                                                  *
+   * ------     -----------     -------      -------------------------------------------------------------*
+   * Infosys     03/01/2017      V1.0        Created                                                      *
+   *                                                                                                      *
+   *                                                                                                      *
+   ********************************************************************************************************/
+
+  PROCEDURE OUTPRINT(P_MESSAGE IN  VARCHAR2) IS
+  BEGIN
+    FND_FILE.PUT_LINE(FND_FILE.OUTPUT, P_MESSAGE);
+  END OUTPRINT;
+
+  FUNCTION spell_number( p_number IN NUMBER ) 
+   RETURN VARCHAR2 
+  AS 
+   TYPE myarray IS TABLE OF VARCHAR2(255); 
+    l_str myarray := myarray( '', 
+    ' thousand ', ' million ', 
+    ' billion ', ' trillion ', 
+    ' quadrillion ', ' quintillion ', 
+    ' sextillion ', ' septillion ', 
+    ' octillion ', ' nonillion ', 
+    ' decillion ', ' undecillion ', 
+    ' duodecillion ' ); 
+   
+    l_num VARCHAR2(50) DEFAULT trunc( p_number ); 
+    l_return VARCHAR2(4000); 
+  BEGIN 
+    FOR i IN 1 .. l_str.count LOOP 
+      EXIT WHEN l_num IS NULL;  
+      IF ( substr(l_num, LENGTH(l_num)-2, 3) <> 0 ) THEN 
+        l_return := to_char(to_date(substr(l_num, LENGTH(l_num)-2, 3), 'J' ),'Jsp' ) || l_str(i) || l_return; 
+      END IF; 
+      l_num := substr( l_num, 1, LENGTH(l_num)-3 ); 
+    END LOOP;  
+    RETURN l_return; 
+  EXCEPTION WHEN OTHERS THEN
+    RETURN NULL;
+  END spell_number;
+
+  FUNCTION get_payment_amount( p_number IN NUMBER ) 
+   RETURN VARCHAR2 
+  AS 
+    v_return VARCHAR2(4000); 
+    v_payment_amount   varchar2(4000) := null;
+    v_payment_decimal  number;
+    v_payment_interger number;
+  BEGIN 
+    v_payment_interger := trunc(p_number);
+    v_return := spell_number(v_payment_interger)||' Dollars';
+    
+    IF instr(to_char(p_number),'.')>0 THEN
+      v_payment_decimal := to_number(substr(to_char(p_number),instr(to_char(p_number),'.')+1));  
+      IF v_payment_decimal <> 0 THEN
+        v_return := v_return||' '||spell_number(v_payment_decimal)||' Cents';
+      END IF;
+    END IF;
+    
+    RETURN v_return; 
+  EXCEPTION WHEN OTHERS THEN
+    RETURN NULL;
+  END get_payment_amount;
+
+  PROCEDURE MAIN(P_ERRBUF            OUT NOCOPY VARCHAR2,
+                   P_RETCODE         OUT NOCOPY VARCHAR2,
+                   P_ORG_ID          IN VARCHAR2,                   
+                   P_SUPPLIER_FROM   IN VARCHAR2,
+                   P_SUPPLIER_TO     IN VARCHAR2,
+                   P_DATE_FROM       IN VARCHAR2,
+                   P_DATE_TO         IN VARCHAR2,
+                   P_CHECK_NUM_FROM  IN VARCHAR2,
+                   P_CHECK_NUM_TO    IN VARCHAR2,
+                   P_BREAK_NUM       IN NUMBER
+                   ) IS
+
+      CURSOR cur_checks IS
+        select ac.check_id,ac.check_number,ac.vendor_id,ac.vendor_site_id,
+          ac.check_date payment_date,ac.amount payment_amount,
+          ac.vendor_name payee_name,
+          ac.address_line1 || decode(ac.address_line1, NULL, '', fnd_global.local_chr(10))
+            || ac.address_line2 || decode(ac.address_line2, NULL, '', fnd_global.local_chr(10))
+            || ac.address_line3 || decode(ac.address_line3, NULL, '', fnd_global.local_chr(10)) payee_address,
+          ac.city || ', '|| ac.state|| ' ' || ac.zip payee_city,
+          decode(ac.country,'US','United States',ac.country) payee_country
+          
+        from ap_checks_all ac
+        where ac.check_number between nvl(P_CHECK_NUM_FROM,ac.check_number) and nvl(P_CHECK_NUM_TO,ac.check_number) 
+          and ac.check_date between nvl(to_date(P_DATE_FROM, 'YYYY/MM/DD HH24:MI:SS'), ac.check_date) and
+                                       nvl(to_date(P_DATE_TO, 'YYYY/MM/DD HH24:MI:SS') + 1 - 0.00001, ac.check_date)
+          and ac.vendor_name between nvl(P_SUPPLIER_FROM,ac.vendor_name) and nvl(P_SUPPLIER_TO,ac.vendor_name) 
+          and ac.payment_method_code='CHECK'
+          and ac.org_id=P_ORG_ID
+        ;
+        
+      CURSOR cur_invoices(i_check_id number) IS
+        select rownum,invoice.invoice_num,invoice.invoice_date,invoice.description,trim(to_char(payment.amount, '$999,999,999,999,999,999.99')) amount
+        from ap_invoices_all invoice,ap_invoice_payments_all payment
+        where invoice.set_of_books_id=payment.set_of_books_id
+          and invoice.org_id=payment.org_id
+          and invoice.invoice_id=payment.invoice_id
+          and payment.check_id=i_check_id
+          and payment.org_id=P_ORG_ID
+        order by invoice.invoice_date
+        ;
+  
+    v_payment_amount   varchar2(4000) := null;
+    v_break_flag       varchar2(1)    := 'N';
+  
+  BEGIN
+  
+  
+
+    FND_FILE.PUT_LINE(fnd_file.LOG, 'P_ORG_ID:  '||P_ORG_ID);
+    FND_FILE.PUT_LINE(fnd_file.LOG, 'P_SUPPLIER_FROM:  '||P_SUPPLIER_FROM);
+    FND_FILE.PUT_LINE(fnd_file.LOG, 'P_SUPPLIER_TO:  '||P_SUPPLIER_TO);
+    FND_FILE.PUT_LINE(fnd_file.LOG, 'P_DATE_FROM:  '||P_DATE_FROM);
+    FND_FILE.PUT_LINE(fnd_file.LOG, 'P_DATE_TO:  '||P_DATE_TO);
+    FND_FILE.PUT_LINE(fnd_file.LOG, 'P_CHECK_NUM_FROM:  '||P_CHECK_NUM_FROM);  
+    FND_FILE.PUT_LINE(fnd_file.LOG, 'P_CHECK_NUM_TO:  '||P_CHECK_NUM_TO);
+
+-------OUTPRINT RESULT--------------------------  
+    OUTPRINT('<?xml version="1.0" ?>');
+    OUTPRINT('<ROOT>');
+
+
+    FOR c_checks IN cur_checks LOOP  
+        v_break_flag := 'N';
+        OUTPRINT('<AP_CHECK_RECORDS>');
+          OUTPRINT('<PAYEE_NAME><![CDATA[' || c_checks.payee_name ||']]></PAYEE_NAME>');
+          OUTPRINT('<PAYMENT_DATE>' || c_checks.payment_date ||'</PAYMENT_DATE>');
+          OUTPRINT('<PAYMENT_AMOUNT>'||trim(to_char(c_checks.payment_amount, '$999,999,999,999,999,999.99')) ||'</PAYMENT_AMOUNT>');
+          OUTPRINT('<PAYEE_ADDRESS><![CDATA[' || c_checks.payee_address ||']]></PAYEE_ADDRESS>');
+          OUTPRINT('<PAYEE_CITY><![CDATA[' || c_checks.payee_city ||']]></PAYEE_CITY>');
+          OUTPRINT('<PAYEE_COUNTRY><![CDATA[' || c_checks.payee_country ||']]></PAYEE_COUNTRY>');
+          v_payment_amount := get_payment_amount(c_checks.payment_amount);
+          OUTPRINT('<PAY_AMOUNT><![CDATA[' || v_payment_amount ||']]></PAY_AMOUNT>');
+          FOR c_invoices IN cur_invoices(c_checks.check_id) LOOP
+          
+            IF c_invoices.rownum <= P_BREAK_NUM then
+              OUTPRINT('<AP_INVOICE_RECORDS>');
+                OUTPRINT('<ROW_NUM>' || c_invoices.rownum ||'</ROW_NUM>');
+                OUTPRINT('<INVOICE_NUM>' || c_invoices.invoice_num ||'</INVOICE_NUM>');
+                OUTPRINT('<INVOICE_DATE>' || c_invoices.invoice_date ||'</INVOICE_DATE>');
+                OUTPRINT('<DESCRIPTION><![CDATA[' || c_invoices.description ||']]></DESCRIPTION>');
+                OUTPRINT('<AMOUNT>'|| c_invoices.amount ||'</AMOUNT>');                        
+              OUTPRINT('</AP_INVOICE_RECORDS>');
+            ELSE
+              OUTPRINT('<AP_INVOICE_RECORDS_II>');
+                OUTPRINT('<ROW_NUM>' || c_invoices.rownum ||'</ROW_NUM>');
+                OUTPRINT('<INVOICE_NUM>' || c_invoices.invoice_num ||'</INVOICE_NUM>');
+                OUTPRINT('<INVOICE_DATE>' || c_invoices.invoice_date ||'</INVOICE_DATE>');
+                OUTPRINT('<DESCRIPTION><![CDATA[' || c_invoices.description ||']]></DESCRIPTION>');
+                OUTPRINT('<AMOUNT>'|| c_invoices.amount ||'</AMOUNT>');                        
+              OUTPRINT('</AP_INVOICE_RECORDS_II>');
+              v_break_flag := 'Y';
+            END IF;
+            
+          END LOOP;
+          OUTPRINT('<P_BREAK_FLAG>' || v_break_flag ||'</P_BREAK_FLAG>');
+          
+        OUTPRINT('</AP_CHECK_RECORDS>');
+
+    END LOOP;
+    
+    OUTPRINT('</ROOT>');
+
+  END;
+  
+
+END XXLETV_AP_CHECK_PRINT_RPT_PKG;
