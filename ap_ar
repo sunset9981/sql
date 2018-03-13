@@ -1,0 +1,150 @@
+--ap terms
+select * from AP_TERMS;
+select * from AP_TERMS_TL;
+select * from AP_TERMS_LINES;
+
+--ar terms
+select * from RA_TERMS_TL;
+select * from RA_TERMS_B;
+select * from RA_TERMS_LINES;
+
+
+
+
+
+
+
+---------------ap------------
+
+select * from ap_invoices_all where invoice_num='20161114';
+select * from ap_invoices_v;
+
+select * from AP_TERMS;
+select * from AP_TERMS_TL;
+select * from AP_TERMS_LINES;
+select * from ap_suppliers;
+
+select to_date('20151222','yyyymmdd')+45 from dual;
+
+
+
+---ap aging sql
+select tt.liability_account,
+    tt.vendor_number, tt.vendor_name, tt.invoice_num, tt.po_number, 
+    tt.invoice_date, tt.gl_date, tt.due_date, tt.payment_term, tt.currency, tt.invoice_amount,
+  (case when tt.day_no<=0 then tt.unpay_amount else 0 end) current_amount,
+  (case when tt.day_no>=1 and tt.day_no<=30 then tt.unpay_amount else 0 end) past_due_30,
+  (case when tt.day_no>=31 and tt.day_no<=60 then tt.unpay_amount else 0 end) past_due_60,
+  (case when tt.day_no>=61 and tt.day_no<=90 then tt.unpay_amount else 0 end) past_due_90,
+  (case when tt.day_no>=91 and tt.day_no<=180 then tt.unpay_amount else 0 end) past_due_180,
+  (case when tt.day_no>=181 and tt.day_no<=360 then tt.unpay_amount else 0 end) past_due_360,
+  (case when tt.day_no>=361 then tt.unpay_amount else 0 end) past_due_361
+from (
+  select aia.invoice_id,
+     asp.segment1 vendor_number, 
+     asp.vendor_name,
+     aia.invoice_num,
+     po_no.po_number,
+     aia.invoice_date, aia.gl_date, apsa.due_date, --aia.invoice_date+atl.due_days due_date2,
+     att.name payment_term, aia.payment_currency_code currency,
+     aia.invoice_amount,
+     nvl(payment_info.paid_amount,0) paid_amount,
+     trunc(sysdate)-trunc(due_date) day_no,
+     aia.invoice_amount-nvl(payment_info.paid_amount,0) unpay_amount,
+     (select gcc.concatenated_segments --xte.ledger_id, xah.ae_header_id, xal.ae_line_num, xte.source_id_int_1,
+      from 
+        xla_transaction_entities_upg xte, 
+        xla_events xe, 
+        xla_ae_headers xah, 
+        xla_ae_lines xal,
+        gl_code_combinations_kfv gcc
+      where xte.entity_id = xe.entity_id
+      and xte.application_id = xe.application_id
+      and xe.entity_id = xah.entity_id
+      and xe.application_id = xah.application_id
+      and xe.event_id = xah.event_id
+      and xah.ae_header_id = xal.ae_header_id
+      and xah.application_id = xal.application_id
+      and xal.code_combination_id=gcc.code_combination_id
+      and xte.entity_code='AP_INVOICES'
+      and xal.accounting_class_code='LIABILITY'
+      and xte.source_id_int_1=aia.invoice_id
+      and rownum=1
+     ) liability_account
+  from ap_invoices_all aia, ap_terms_tl att, ap_terms_lines atl,
+       ap_suppliers asp, ap_payment_schedules_all apsa,
+       (select po_info.invoice_id,po_info.set_of_books_id,
+          listagg(po_info.po_number,',') within group (order by po_info.invoice_id) po_number
+        from (
+          select distinct aida.invoice_id,aida.set_of_books_id, pha.segment1 po_number
+          from ap_invoice_distributions_all aida, po_distributions_all pda, po_headers_all pha
+          where aida.po_distribution_id=pda.po_distribution_id
+           and pda.po_header_id=pha.po_header_id
+        --   and aida.invoice_id=33481
+        ) po_info
+        group by po_info.invoice_id,po_info.set_of_books_id
+     ) po_no,
+     (select aipa.invoice_id, aipa.set_of_books_id, sum(aipa.amount) paid_amount--, aca.check_date payment_date
+      from ap_invoice_payments_all aipa, ap_checks_all aca
+      where aipa.check_id=aca.check_id
+        and aca.check_date <= sysdate
+      group by aipa.invoice_id, aipa.set_of_books_id
+      ) payment_info
+  where aia.terms_id=att.term_id
+   and att.term_id=atl.term_id
+   and aia.vendor_id=asp.vendor_id
+   and aia.invoice_id=apsa.invoice_id
+   and aia.invoice_id=po_no.invoice_id(+)
+   and aia.set_of_books_id=po_no.set_of_books_id(+)
+   and aia.invoice_id=payment_info.invoice_id(+)
+   and aia.set_of_books_id=payment_info.set_of_books_id(+)
+   and aia.invoice_num in ('20161114','388')
+ ) tt
+where tt.unpay_amount>0
+;
+
+----------------AR--------------
+select bill_to_customer_id from ra_customer_trx_all where trx_number='10';
+select cust_account_id, account_number,account_name from hz_cust_accounts where cust_account_id=1044;
+select party_name from hz_parties where party_id=10072;
+
+select hca.cust_account_id, hca.account_number, hca.account_name, hp.party_name --hca.cust_account_id=ra_customer_trx_all.bill_to_customer_id
+from hz_cust_accounts hca, hz_parties hp
+where hca.party_id=hp.party_id;
+select * from ra_terms_b;
+select * from ra_terms_tl;
+
+arpt_sql_func_util.get_first_real_due_date(ct.customer_trx_id, ct.term_id, ct.trx_date) 
+
+select * from ra_cust_trx_types_all;
+
+ select * from ra_customer_trx_all where trx_number='88' and org_id=101;-- aia 
+ where not exists (select customer_trx_id from ar_payment_schedules_all apsa where aia.customer_trx_id=apsa.customer_trx_id);
+ select * from ra_customer_trx_lines_all where extended_amount is null; customer_trx_id=15045;
+
+
+select hca.account_number customer_no, hp.party_name customer_name,
+  rtt.name term_name, rcta.trx_date invoice_date, rcta.trx_number invoice_number, rctta.name invoice_type, rcta.purchase_order,
+  arpt_sql_func_util.get_first_real_due_date(rcta.customer_trx_id, rcta.term_id, rcta.trx_date) due_date,
+  cst_item.segment1 line_item, rctla.description item_description,
+  rctla.extended_amount balance
+from ra_customer_trx_all rcta, 
+    hz_cust_accounts hca, hz_parties hp,
+    ra_cust_trx_types_all rctta,
+    ra_terms_tl rtt,
+    ra_customer_trx_lines_all rctla,
+    (select items_b.inventory_item_id,items_b.segment1,invent.operating_unit,items_b.inventory_item_flag
+      from mtl_system_items_b items_b,org_organization_definitions invent
+    where invent.organization_id=items_b.organization_id and items_b.enabled_flag='Y' 
+    ) cst_item
+    
+where rcta.bill_to_customer_id=hca.cust_account_id
+  and hca.party_id=hp.party_id
+  and rcta.cust_trx_type_id=rctta.cust_trx_type_id
+  and rcta.term_id=rtt.term_id
+  and rcta.customer_trx_id=rctla.customer_trx_id
+  and rctla.inventory_item_id=cst_item.inventory_item_id(+)
+  and rctla.org_id=cst_item.operating_unit(+)
+  and rcta.trx_number='88'
+  and rcta.org_id=101;
+    
