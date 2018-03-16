@@ -141,6 +141,62 @@ accounts receivables应收账款
 external adj. 外部的；表面的；[药] 外用的；外国的；外面的n. 外部；外观；外面
 
 
+scenario （行动的）方案;脚本
+svn  Subversion  版本控制系统
+vpn   virtual private network 
+Procure to Pay P2P 采购到付款
+Scenario方案; 剧情概要; 分镜头剧本
+Procure取得，获得; 实现，完成; 导致; 取得; 介绍娼妓，拉皮条
+particulars细节，详细情况，详情; 特殊情况( particular的名词复数 ); 一项; 项目; 
+General Ledger总账; 总分类账; 总清账; 普通分类账
+
+miscellaneous    adj.混杂的;各种各样的;五花八门的;多方面的
+manual    adj.用手的;手制的，手工的;[法]占有的;体力的 n.手册;指南;[乐]键盘;[军]刀枪操练
+journal    n.日报，日志，日记;定期刊物，期刊，杂志;[会计]分类账
+draft     n.汇票;草稿;吃水;选派;（尤指房间、烟囱、炉子等供暖系统中的）（小股）气流  vt.起草;制定;征募  vi.拟稿;绘样;作草图
+single ledger 单一的分类账
+
+legar entity :法律实体
+version operations：版本操作
+Bill To 付款方
+remittance 汇款
+receipts 收据;收入;
+bills receivable 应收票据
+notifications 通知
+credit management 信用管理
+late charges 	后期费用
+batches 批次
+incomplete 未完成的
+clear/risk eliminate 消除风险
+cash application work queue 现金应用工作队列
+correct funds transfer 正确的资金转移
+receivable activities 应收账款活动
+reconciliation 和解
+bank statement银行结单[报表]
+trading community manager 交易社区经理
+purchasing  采购
+interest rate schedules 利率的时间表
+cash forecasting 现金预测
+bank account transfers 银行账户转账
+authorize bank account transfers 授权银行转帐
+manual clearing 手动清除
+available 可用的
+payroll n.工资名单;工资总支出，工薪总额
+general ledger 总账;
+CRM： Customer Relationship Management 
+HRMS：  Human Resource Management System
+chart of accounts -accounts hierarchy 帐目表-帐户层次结构
+journal entry日记账分录，流水分录
+
+in payables,you create accounting entries,and then submit the payables transfer to general ledger program to transfer the accounting entries to the general ledger interface.
+在应付账款中，您创建会计分录，然后将应付款项转移到总帐程序中，以便将会计条目转移到总帐接口。
+in receivables, you submit the general ledger interface program transfer accounting entries to the general ledger interface.
+在应收款中，您将总帐接口程序转移到总帐接口中。
+Oracle Cash Management helps you to manage and control your cash cycle. It provides you with many features which will help you to keep a complete track of cash inflows and outflows
+Oracle现金管理帮助你管理和控制你的现金周期。它为你提供了许多功能，可以帮助你保持现金流入和流出的完整轨迹。
+
+
+
 
 
 
