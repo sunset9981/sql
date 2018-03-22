@@ -1,0 +1,70 @@
+调用EBS标准API的时候，可能会返回一些让人看不懂的错误，比如最近我在开发rcv_transaction_interface的时候，数据卡在接口表里没有过去，但是返回的错误令人费解。 
+例如如下两个错误就让人费解： 
+******************* 
+Error: derive_vendor_rcv_line_qty-098: 1 
+Cause: A SQL error has occurred in derive_vendor_rcv_line_qty. The SQL error is User-Defined Exception. 
+Action: Take note of both this error number and the actions you were trying to perform. Contact your system administrator for further assistance. 
+******************** 
+RVTSH-189：子例行程序 rvtshiline() 返回的错误 
+原因：子例行程序 rvtshiline() 返回时出现内部错误。 
+措施：请记录此错误编号以及您尝试进行的活动。 请与系统管理员联系以寻求帮助 
+Concurrent program RVCTP returned error 
+
+Cause: RVCTP encountered an internal error. Parameters: RVCTP,IMMEDIATE,4686, 
+
+Action: Note both this error number and the actions you are trying to perform. Contact your system admi 
+RVTBM-008: Subroutine rvtbm_immediate_mngr() returned error 
+
+Cause: Subroutine rvtbm_immediate_mngr() returned an internal error. 
+
+Action: Note this error number and the actions you are trying to perform. Contact your syste 
+RVTBM-120: Subroutine rvtptcontrol() returned error 
+
+Cause: Subroutine rvtptcontrol() returned an internal error. 
+
+Action: Note this error number and the actions you are trying to perform. Contact your system administrator 
+Concurrent Manager encountered an error while attempting to start your immediate concurrent program RVCTP. Routine &ROUTINE received a return code of failure. 
+
+Contact your support representative. 
+**************************************** 
+
+那么我们就可以利用EBS标准的Debug方法来轻易的追踪到错误原因： 
+****************** 
+首先，我们需要在admin职责下设置一些Profile: 
+---------------------------------------------- 
+a. RCV: Debug Mode=Yes 
+b. FND: Debug Log Enabled=Yes 
+c. FND: Debug Log Level=Statement 
+d. FND: Debug Log Module=po% 
+---------------------------------------------- 
+a. TP:INV Transaction processing mode=On-line 
+b. INV: Debug Trace=Yes 
+c. INV: Debug Level=11 
+d. INV: Debug file (Including the complete path)=<valid directory path
+
+---------------------------------------------- 
+a. OM: Debug Level = 5 
+b. OM: Debug Log Directory = <valid directory path> 
+然后可以用如下SQL查看Debug信息： 
+select to_char(timestamp, 'DD-MON-YY HH24:MI:SS'), 
+message_text, 
+module, 
+log_sequence 
+from fnd_log_messages 
+WHERE trunc(timestamp) = trunc(sysdate) 
+AND process_id = (SELECT os_process_id 
+FROM fnd_concurrent_requests 
+WHERE request_id = &p_request_id) 
+AND module not like 'fnd%' 
+ORDER BY log_sequence; 
+********************************************* 
+例如错误：Error: derive_vendor_rcv_line_qty-098的Debug信息如下：
+
+
+Match Option:RProfile value ALLOW_RATE_OVERRIDE_FOR_USER_RATE_TYPE:N	po.plsql.RCV_ROI_TRANSACTION.RCV_ROI_TRANSACTION.4731
+
+No of Distributions:1:: Rate and Rate_date in po distributions7.468200216771979::16-JAN-08	po.plsql.RCV_ROI_TRANSACTION.RCV_ROI_TRANSACTION.4757
+
+Exception in derive_vendor_rcv_line_qty	po.plsql.RCV_ROI_TRANSACTION.RCV_ROI_TRANSACTION.5011
+
+由此，我们可以看到在Package：RCV_ROI_TRANSACTION中，4757行 - 5011行之间发生错误，引发Exception报错：Error: derive_vendor_rcv_line_qty-098，那么此错误就轻易被解决掉了。
